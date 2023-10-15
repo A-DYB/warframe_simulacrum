@@ -45,14 +45,14 @@ class ProcContainer:
                 self.enemy.unique_proc_count += 1
 
         self.proc_dq.append(proc)
-        self.total_damage += proc.damage
+        self.total_damage[self.manager.proc_id] += proc.damage
         self.count += 1
 
     def damage_event(self, fire_mode:FireMode, enemy:Unit):
         if self.count == 0:
             return
         
-        app_dmg = self.enemy.apply_damage(fire_mode, self.total_damage, constants.DAMAGE_NONE, source='proc')
+        app_dmg = self.enemy.apply_damage(fire_mode, self.total_damage, constants.DAMAGE_NONE, constants.DAMAGE_NONE, source='proc')
         self.manager.total_applied_damage += app_dmg
 
         self.next_event += 1
@@ -60,7 +60,7 @@ class ProcContainer:
 
     def expiry_event(self, fire_mode, enemy):
         if self.count>0 and self.simulation.time >= self.proc_dq[0].expiry:
-            self.total_damage -= self.proc_dq[0].damage
+            self.total_damage[self.manager.proc_id] -= self.proc_dq[0].damage
             self.proc_dq.popleft()
             self.simulation.event_queue.put((self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.proc_dq[0].fire_mode, self.expiry_event, self.proc_dq[0].expiry)))
             self.count -= 1
@@ -89,7 +89,7 @@ class DefaultProcManager():
 
     def add_proc(self, fire_mode: FireMode, damage: np.array):
         duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
-        new_proc = Proc(self.enemy, fire_mode, duration, damage)
+        new_proc = Proc(self.enemy, fire_mode, duration, sum(damage))
         delta = False
 
         if self.count == 0:
@@ -152,11 +152,11 @@ class ContainerizedProcManager:
     def add_proc(self, fire_mode:FireMode, damage:np.array):
         duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
         if self.proc_id == 2:
-            damage = 0.35 * damage 
+            damage = 0.35 * sum(damage) 
         elif self.proc_id == 6:
-            damage = 0.5 * damage * (1 + fire_mode.toxin_m["base"])
+            damage = 0.5 * sum(damage)  * (1 + fire_mode.toxin_m["base"])
         else:
-            damage = damage
+            damage = sum(damage) 
         
         new_proc = Proc(self.enemy, fire_mode, duration, damage)
 
@@ -213,18 +213,18 @@ class AOEProcManager:
             # remove oldest proc
             while self.count >= self.max_stacks:
                 old_proc = self.proc_dq.popleft()
-                self.total_damage -= old_proc.damage
+                self.total_damage[self.proc_id] -= old_proc.damage
                 self.count -= 1
 
         if self.proc_id == 5: # can replace with index
-            damage = 0.5 * damage * (1 + fire_mode.electric_m["base"])
+            damage = 0.5 * sum(damage)  * (1 + fire_mode.electric_m["base"])
         elif self.proc_id == 9:
-            damage = 0.5 * damage
+            damage = 0.5 * sum(damage) 
         else:
-            damage = damage
+            damage = sum(damage) 
 
         new_proc = Proc(self.enemy, fire_mode, duration, damage)
-        self.total_damage += new_proc.damage
+        self.total_damage[self.proc_id] += new_proc.damage
         self.proc_dq.append(new_proc)
         self.count += 1
 
@@ -233,7 +233,7 @@ class AOEProcManager:
         if self.count == 0:
             return
         
-        applied_dmg = self.enemy.apply_damage(fire_mode, self.total_damage, constants.DAMAGE_NONE, source='elec proc')
+        applied_dmg = self.enemy.apply_damage(fire_mode, self.total_damage, constants.DAMAGE_NONE, constants.DAMAGE_NONE, source='elec proc')
         self.total_applied_damage += applied_dmg
         self.next_tick_event += 1
         # always put on event queue because even if expiry is imminent, another refresher proc can happen before then
@@ -245,7 +245,7 @@ class AOEProcManager:
         
         if self.proc_dq[0].expiry <= self.simulation.time:
             old_proc = self.proc_dq.popleft()
-            self.total_damage -= old_proc.damage
+            self.total_damage[self.proc_id] -= old_proc.damage
             self.count -= 1
 
             if self.count == 0:
@@ -307,7 +307,7 @@ class HeatProcManager:
             
             duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
             expiry = self.simulation.time + duration
-            damage = 0.5 * damage * (1 + fire_mode.heat_m["base"])
+            damage = 0.5 * sum(damage)  * (1 + fire_mode.heat_m["base"])
 
             armor_strip_delay = self.base_armor_strip_delay * (1 + fire_mode.statusDuration_m["base"])
             # schedule heat strip
@@ -316,13 +316,13 @@ class HeatProcManager:
             self.simulation.event_queue.put((expiry, self.simulation.get_call_index(), EventTrigger(fire_mode, self.expiry_event, expiry)))
             self.enemy.unique_proc_count += 1
         else:
-            damage = 0.5 * damage * (1 + self.proc_dq[0].fire_mode.heat_m["base"])
+            damage = 0.5 * sum(damage) * (1 + self.proc_dq[0].fire_mode.heat_m["base"])
             duration = self.base_duration * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
     
         new_proc = Proc(self.enemy, fire_mode, duration, damage)
         self.expiry = new_proc.expiry
 
-        self.total_damage += new_proc.damage
+        self.total_damage[self.proc_id] += new_proc.damage
         self.proc_dq.append(new_proc)
         self.count += 1
 
@@ -330,7 +330,7 @@ class HeatProcManager:
     def damage_event(self, fire_mode, enemy):
         if self.count == 0:
             return 
-        applied_dmg = self.enemy.apply_damage(self.proc_dq[0].fire_mode, self.total_damage, constants.DAMAGE_NONE, source='proc')
+        applied_dmg = self.enemy.apply_damage(self.proc_dq[0].fire_mode, self.total_damage, constants.DAMAGE_NONE, constants.DAMAGE_NONE, source='proc')
         self.total_applied_damage += applied_dmg
         self.next_tick_event += 1
         # always put on event queue because even if expiry is imminent, another refresher proc can happen before then

@@ -47,18 +47,16 @@ class FireMode():
 
         self.trigger = self.data.get("trigger", "AUTO")
 
-        self.damagePerShot = Parameter( np.array(self.data.get("damagePerShot", np.array([0]*20)), dtype=float) )
-        self.elementalDamagePerShot = np.array([0]*20, dtype=float) # physical and elemental modded damage - this is separate because of complications with quantization and status damage
-        self.totalQuantizedDamagePerShot = np.array([0]*20, dtype=float)
+        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20)), dtype=float) )
+        self.elementalDamagePerShot = DamageParameter( np.array([0]*20, dtype=float) ) # physical and elemental modded damage - this is separate because of complications with quantization and status damage
         self.criticalChance = Parameter( self.data.get("criticalChance", 0) )
         self.criticalMultiplier = Parameter( self.data.get("criticalMultiplier", 1) )
         self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
         self.procChance = Parameter( self.data.get("procChance", 0) )
-        self.procProbabilities = np.array([0]*20)
-        self.procCumulativeProbabilities = np.array([0]*20)
+        self.procProbabilities = np.array([0]*20, dtype=float)
+        self.procCumulativeProbabilities = np.array([0]*20, dtype=float)
 
-
-        self.magazineSize = Parameter( self.data.get("magazineSize", 100) )
+        self.magazineSize = ModifyParameter( self.data.get("magazineSize", 100) )
         self.fireRate = Parameter( self.data.get("fireRate", 5) )
         self.reloadTime = Parameter( self.data.get("reloadTime", 1) )
         self.multishot = Parameter( self.data.get("multishot", 1) )
@@ -100,6 +98,7 @@ class FireMode():
         self.ammoCost_m = {"base":0, "energized_munitions":0}
 
         self.load_mods()
+        self.apply_mods()
 
         self.refresh = True
 
@@ -107,8 +106,7 @@ class FireMode():
         self.attack_index = 1
 
         self.damagePerShot.reset()
-        self.elementalDamagePerShot = np.array([0]*20, dtype=float)
-        self.totalQuantizedDamagePerShot = np.array([0]*20, dtype=float)
+        self.elementalDamagePerShot.reset()
         self.criticalChance.reset()
         self.criticalMultiplier.reset()
         self.procChance.reset()
@@ -124,7 +122,67 @@ class FireMode():
         self.damagePerShot_m["base"] = 0
         self.damagePerShot_m["final_multiplier"] = 1
 
-    
+    def apply_mods(self):
+        ## Damage
+        weights = self.damagePerShot.base/max(sum(self.damagePerShot.base), 0.01)
+        damagePerShot_bonus = weights * self.bonusDamagePerShot_m["additive_base"]
+        
+        self.damagePerShot.modded = (self.damagePerShot.base + damagePerShot_bonus) * \
+                                            (1 + self.damagePerShot_m["base"]) * \
+                                                self.damagePerShot_m["multishot_multiplier"] * \
+                                                    self.damagePerShot_m["final_multiplier"]
+        
+        # Bonus damage types
+        total_base_damage = sum(self.damagePerShot.modded)
+        self.elementalDamagePerShot.modded[0] = self.damagePerShot.modded[0] * self.impact_m["base"]
+        self.elementalDamagePerShot.modded[1] = self.damagePerShot.modded[1] * self.puncture_m["base"]
+        self.elementalDamagePerShot.modded[2] = self.damagePerShot.modded[2] * self.slash_m["base"]
+
+        self.elementalDamagePerShot.modded[3] = total_base_damage * self.heat_m["base"]
+        self.elementalDamagePerShot.modded[4] = total_base_damage * self.cold_m["base"]
+        self.elementalDamagePerShot.modded[5] = total_base_damage * self.electric_m["base"]
+        self.elementalDamagePerShot.modded[6] = total_base_damage * self.toxin_m["base"]
+
+        quanta = (total_base_damage + sum(self.elementalDamagePerShot.modded)) / 16
+        self.damagePerShot.quantized = np.round( self.damagePerShot.modded / quanta, 0) * quanta
+        self.elementalDamagePerShot.quantized = np.round( self.elementalDamagePerShot.modded / quanta, 0) * quanta
+        
+        ## Critical Chance
+        # puncture_count = self.proc_controller.puncture_proc_manager.count
+        # criticalChance_puncture = 0 if self.radial else puncture_count * 0.05
+        self.criticalChance.modded = ((self.criticalChance.base + self.criticalChance_m["additive_base"]) * \
+                                                (1 + self.criticalChance_m["base"]) + self.criticalChance_m["additive_final"] ) * \
+                                                    self.criticalChance_m["deadly_munitions"] + self.criticalChance_m["covenant"]
+
+        # ## Critical Damage
+        # cold_count = self.proc_controller.cold_proc_manager.count
+        # criticalMultiplier_cold = 0 if self.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
+        self.criticalMultiplier.modded = ((self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"]) * \
+                                                    (1 + self.criticalMultiplier_m["base"]) + self.criticalMultiplier_m["additive_final"] ) * \
+                                                        self.criticalMultiplier_m["final_multiplier"]
+
+        
+
+        ## Status chance
+        self.procChance.modded = (self.procChance.base + self.procChance_m["additive_base"]) * \
+                                        ((1 + self.procChance_m["base"]) + self.procChance_m["additive_final"]) *\
+                                        self.procChance_m["final_multiplier"] * self.procChance_m["multishot_multiplier"]
+        self.procProbabilities = self.damagePerShot.modded + self.elementalDamagePerShot.modded
+        # self.procProbabilities *= self.procImmunities
+        tot_weight = sum(self.procProbabilities)
+        self.procProbabilities *= 1/tot_weight if tot_weight>0 else 0
+
+        self.procCumulativeProbabilities = 0
+
+        ## Other
+        self.multishot.modded = self.multishot.base * (1 + self.multishot_m["base"])
+        self.fireRate.modded = self.fireRate.base * (1 + self.fireRate_m["base"])
+        self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"])
+        self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"])
+        self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"])
+        self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"])
+        self.embedDelay.modded = self.embedDelay.base
+        self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"]) * max(0, 1 - self.ammoCost_m["energized_munitions"])
 
     def pull_trigger(self, fire_mode, enemy:Unit):
         # add secondary effect to event queue and update its next event timestamp
@@ -177,15 +235,37 @@ class FireModeEffect():
         self.embedDelay = self.data.get("embedDelay", 0)
         self.forcedProc = self.data.get("forcedProc", [])
 
-class Parameter():
+class DamageParameter():
     def __init__(self, base) -> None:
         self.base = base
         self.modded = base
-        self.current = self.modded
+        self.quantized = base
+
+    def reset(self):
+        self.modded = self.base
+        self.quantized = self.base
+
+    def multiply(self, val):
+        self.modded *= val
+        self.quantized *= val
+
+class ModifyParameter():
+    def __init__(self, base) -> None:
+        self.base = base
+        self.modded = base
+        self.current = base
 
     def reset(self):
         self.modded = self.base
         self.current = self.modded
+
+class Parameter():
+    def __init__(self, base) -> None:
+        self.base = base
+        self.modded = base
+
+    def reset(self):
+        self.modded = self.base
 
 class EventTrigger():
     def __init__(self, fire_mode:[FireModeEffect, FireMode], func, time:int) -> None:

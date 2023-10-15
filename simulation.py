@@ -72,15 +72,15 @@ def stats_changed(prev_data:dict, enemy:Unit):
     return True
 
 def run_reapeated(simulation:Simulacrum, enemy:Unit, weapon:Weapon, count=20):
-    # t1 = time.time()
+    t1 = time.time()
     for _ in range(count):
         simulation.reset()
         enemy.reset()
         weapon.reset()
 
         simulation.fast_run([enemy], weapon.fire_modes[0])
-    # t2 = time.time()
-    # print(t2-t1)
+    t2 = time.time()
+    print(t2-t1)
 
 def run_once(simulation:Simulacrum, enemy:Unit, weapon:Weapon):
     simulation.run_simulation([enemy], weapon.fire_modes[0])
@@ -89,24 +89,14 @@ simulation = Simulacrum()
 enemy = Unit("Arid Lancer", 9000, simulation)
 weapon = Weapon("Synapse", None, simulation)
 # run_once(simulation, enemy, weapon)
-# run_reapeated(simulation, enemy, weapon)
+run_reapeated(simulation, enemy, weapon)
 
-# simulation = Simulacrum()
-# #enemy = Unit("Corpus Tech", 9999, simulation)
-# # enemy = Unit("Charger Eximus", 30, simulation)
-# enemy = Unit("Arid Lancer", 50, simulation)
-# # weapon = Weapon("Lex", None, simulation)
-# weapon = Weapon("Synapse", None, simulation)
-# # weapon = Weapon("Acrid", None, simulation)
 
-# simulation.run_simulation([enemy], weapon.fire_modes[0])
-
-# run_reapeated()
-
-import pstats, cProfile
-profiler = cProfile.Profile()
-profiler.enable()
-run_reapeated(simulation, enemy, weapon, count=1)
-profiler.disable()
-stats = pstats.Stats(profiler).sort_stats('cumtime')
-stats.print_stats()
+# import pstats, cProfile
+# profiler = cProfile.Profile()
+# profiler.enable()
+# # run_reapeated(simulation, enemy, weapon, count=1)
+# simulation.fast_run( [enemy], weapon.fire_modes[0])
+# profiler.disable()
+# stats = pstats.Stats(profiler).sort_stats('tottime')
+# stats.print_stats()
