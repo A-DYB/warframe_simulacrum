@@ -6,17 +6,18 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import time
+import heapq
 
 class Simulacrum:
     def __init__(self) -> None:
-        self.event_queue:"PriorityQueue[Tuple[int, int, EventTrigger]]" = PriorityQueue()
+        self.event_queue:"heapq[Tuple[int, int, EventTrigger]]" = []
         self.time = 0
         self.call_index = 0
 
     def reset(self):
         self.time = 0
         self.call_index = 0
-        self.event_queue = PriorityQueue()
+        self.event_queue = []
 
     def get_call_index(self):
         idx = self.call_index
@@ -29,10 +30,10 @@ class Simulacrum:
         data = [stats]
 
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        self.event_queue.put((event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
+        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
         for enemy in enemies:
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
-                self.time, _, event = self.event_queue.get()
+                self.time, _, event = heapq.heappop(self.event_queue)
                 event.func(event.fire_mode, enemy)
 
                 if stats_changed(data[-1], enemy):
@@ -55,10 +56,11 @@ class Simulacrum:
 
     def fast_run(self, enemies:List[Unit], fire_mode:FireMode):
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        self.event_queue.put((event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
+        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
+
         for enemy in enemies:
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
-                self.time, _, event = self.event_queue.get()
+                self.time, _, event = heapq.heappop(self.event_queue)
                 event.func(event.fire_mode, enemy)
                 
                 if self.time > 20 :
@@ -72,15 +74,15 @@ def stats_changed(prev_data:dict, enemy:Unit):
     return True
 
 def run_reapeated(simulation:Simulacrum, enemy:Unit, weapon:Weapon, count=20):
-    t1 = time.time()
+    # t1 = time.time()
     for _ in range(count):
         simulation.reset()
         enemy.reset()
         weapon.reset()
 
         simulation.fast_run([enemy], weapon.fire_modes[0])
-    t2 = time.time()
-    print(t2-t1)
+    # t2 = time.time()
+    # print(t2-t1)
 
 def run_once(simulation:Simulacrum, enemy:Unit, weapon:Weapon):
     simulation.run_simulation([enemy], weapon.fire_modes[0])
@@ -92,11 +94,11 @@ weapon = Weapon("Synapse", None, simulation)
 run_reapeated(simulation, enemy, weapon)
 
 
-# import pstats, cProfile
-# profiler = cProfile.Profile()
-# profiler.enable()
-# # run_reapeated(simulation, enemy, weapon, count=1)
-# simulation.fast_run( [enemy], weapon.fire_modes[0])
-# profiler.disable()
-# stats = pstats.Stats(profiler).sort_stats('tottime')
-# stats.print_stats()
+import pstats, cProfile
+profiler = cProfile.Profile()
+profiler.enable()
+# run_reapeated(simulation, enemy, weapon, count=1)
+simulation.fast_run( [enemy], weapon.fire_modes[0])
+profiler.disable()
+stats = pstats.Stats(profiler).sort_stats('tottime')
+stats.print_stats()

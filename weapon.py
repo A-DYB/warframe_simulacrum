@@ -6,6 +6,7 @@ from pathlib import Path
 import json
 import re
 import constants
+import heapq
 
 from random import random
 from typing import List, TYPE_CHECKING
@@ -58,6 +59,7 @@ class FireMode():
 
         self.magazineSize = ModifyParameter( self.data.get("magazineSize", 100) )
         self.fireRate = Parameter( self.data.get("fireRate", 5) )
+        self.fireTime = Parameter( 1/self.fireRate.modded )
         self.reloadTime = Parameter( self.data.get("reloadTime", 1) )
         self.multishot = Parameter( self.data.get("multishot", 1) )
         self.ammoCost = Parameter( self.data.get("ammoCost", 1) )
@@ -112,6 +114,7 @@ class FireMode():
         self.procChance.reset()
         self.magazineSize.reset()
         self.fireRate.reset()
+        self.fireTime.reset()
         self.reloadTime.reset()
         self.multishot.reset()
         self.ammoCost.reset()
@@ -177,6 +180,7 @@ class FireMode():
         ## Other
         self.multishot.modded = self.multishot.base * (1 + self.multishot_m["base"])
         self.fireRate.modded = self.fireRate.base * (1 + self.fireRate_m["base"])
+        self.fireTime.modded = 1 / self.fireRate.modded
         self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"])
         self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"])
         self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"])
@@ -185,7 +189,7 @@ class FireMode():
         self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"]) * max(0, 1 - self.ammoCost_m["energized_munitions"])
 
     def pull_trigger(self, fire_mode, enemy:Unit):
-        # add secondary effect to event queue and update its next event timestamp
+        # TODO add secondary effect to event queue and update its next event timestamp
 
         multishot_roll = get_tier(self.multishot.modded)
         multishot = multishot_roll
@@ -196,24 +200,25 @@ class FireMode():
             self.damagePerShot_m["multishot_multiplier"] = multishot_roll
             self.procChance_m["multishot_multiplier"] = multishot_roll
             multishot = 1
+        multishot = 1
 
         for _ in range(multishot):
             fm_time = self.simulation.time + self.embedDelay.modded
-            self.simulation.event_queue.put((fm_time, self.simulation.get_call_index(), EventTrigger(self, enemy.pellet_hit, fm_time)))
+            heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(self, enemy.pellet_hit, fm_time)))
 
             for fme in self.fire_mode_effects:
                 fme_time = fme.embedDelay + fm_time
-                self.simulation.event_queue.put((fme_time, self.simulation.get_call_index(), EventTrigger(fme, enemy.pellet_hit, fme_time)))
+                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(fme, enemy.pellet_hit, fme_time)))
 
 
         if self.magazineSize.current > 0:
-            next_event = self.simulation.time + 1/self.fireRate.modded + self.chargeTime.modded
+            next_event = self.simulation.time + self.fireTime.modded + self.chargeTime.modded
         # reload
         else:
             self.magazineSize.current = self.magazineSize.modded
-            next_event = self.simulation.time + max(self.reloadTime.modded, 1/self.fireRate.modded) + self.chargeTime.modded
+            next_event = self.simulation.time + max(self.reloadTime.modded, self.fireTime.modded) + self.chargeTime.modded
 
-        self.simulation.event_queue.put((next_event, self.simulation.get_call_index(), EventTrigger(fire_mode, self.pull_trigger, next_event)))
+        heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.get_call_index(), EventTrigger(fire_mode, self.pull_trigger, next_event)))
 
 def get_tier(chance):
     return int(random()<(chance%1)) + int(chance)
