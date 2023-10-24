@@ -2498,15 +2498,63 @@
                     0
                 ],
                 "totalDamage": 36.000004,
-                "criticalChance": 0.23999999,
+                "criticalChance": 1,
                 "criticalMultiplier": 2.2,
                 "procChance": 0.10000002,
-                "fireRate": 7.0000005,
+                "fireRate": 1.05,
                 "accuracy": 14.285714,
                 "noise": "ALARMING",
                 "trigger": "AUTO",
                 "magazineSize": 16,
                 "reloadTime": 1.7,
+                "multishot": 1,
+                "ammoCost": 1,
+                "chargeTime": 0,
+                "forcedProc": [5],
+                "secondaryEffects": {}
+            }
+        }
+    },
+    "Zylok Prime": {
+        "name": "Zylok Prime",
+        "uniqueName": "/Lotus/Weapons/Tenno/Pistols/PrimeZylok/ZylokPrimePistol",
+        "productCategory": "Pistols",
+        "omegaAttenuation": 0.5,
+        "rivenType": "Pistol Riven Mod",
+        "fireModes": {
+            "default": {
+                "damagePerShot": [
+                    63.000004,
+                    21,
+                    126.00001,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "totalDamage": 210,
+                "criticalChance": 0.12,
+                "criticalMultiplier": 2.4000001,
+                "procChance": 0.36000001,
+                "fireRate": 1.5000001,
+                "accuracy": 23.529411,
+                "noise": "ALARMING",
+                "trigger": "DUPLEX",
+                "magazineSize": 12,
+                "reloadTime": 1.2,
                 "multishot": 1,
                 "ammoCost": 1,
                 "chargeTime": 0,
@@ -3239,7 +3287,7 @@
         "name": "Afuris Prime",
         "uniqueName": "/Lotus/Weapons/Tenno/Pistols/PrimeAfuris/PrimeAFurisWeapon",
         "productCategory": "Pistols",
-        "omegaAttenuation": 0.85000002,
+        "omegaAttenuation": 0.89999998,
         "rivenType": "Pistol Riven Mod",
         "fireModes": {
             "default": {
@@ -3794,19 +3842,19 @@
                     0
                 ],
                 "totalDamage": 130,
-                "criticalChance": 1,
+                "criticalChance": 0.2,
                 "criticalMultiplier": 2,
                 "procChance": 0.10000002,
-                "fireRate": 2,
+                "fireRate": 1.0833334,
                 "accuracy": 16,
                 "noise": "ALARMING",
                 "trigger": "SEMI",
                 "magazineSize": 6,
-                "reloadTime": 0.5,
+                "reloadTime": 2.3499999,
                 "multishot": 1,
                 "ammoCost": 1,
                 "chargeTime": 0,
-                "forcedProc": [4],
+                "forcedProc": [],
                 "secondaryEffects": {}
             }
         }
@@ -4220,7 +4268,7 @@
         "name": "Gunsen Prime",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Warfan/PrimeGunsen/PrimeGunsenWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.64999998,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -4440,7 +4488,7 @@
         "name": "Argo & Vel",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/SwordsAndBoards/DaxDuviriMaceShieldWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.69999999,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -4550,7 +4598,7 @@
         "name": "Cobra & Crane Prime",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/SwordsAndBoards/PrimeCobraAndCrane/PrimeCobraAndCraneWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.89999998,
+        "omegaAttenuation": 0.94999999,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -4924,6 +4972,60 @@
                 "heavySlamRadialDamage": 1000,
                 "heavySlamRadius": 8,
                 "windUp": 0.69999999,
+                "ammoCost": 1,
+                "chargeTime": 0,
+                "forcedProc": [],
+                "secondaryEffects": {}
+            }
+        }
+    },
+    "Dorrclave": {
+        "name": "Dorrclave",
+        "uniqueName": "/Lotus/Weapons/Tenno/Melee/Swords/TnDagathBladeWhip/TnDagathBladeWhip",
+        "productCategory": "Melee",
+        "omegaAttenuation": 0.5,
+        "fireModes": {
+            "default": {
+                "damagePerShot": [
+                    0,
+                    0,
+                    222,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "totalDamage": 222,
+                "criticalChance": 0.25999999,
+                "criticalMultiplier": 2.2,
+                "procChance": 0.24000001,
+                "fireRate": 0.83333337,
+                "blockingAngle": 60,
+                "comboDuration": 5,
+                "followThrough": 0.5,
+                "range": 2.5,
+                "slamAttack": 666,
+                "slamRadialDamage": 222,
+                "slamRadius": 7,
+                "slideAttack": 222,
+                "heavyAttackDamage": 888,
+                "heavySlamAttack": 888,
+                "heavySlamRadialDamage": 888,
+                "heavySlamRadius": 8,
+                "windUp": 0.40000001,
                 "ammoCost": 1,
                 "chargeTime": 0,
                 "forcedProc": [],
@@ -5528,6 +5630,61 @@
                 "heavySlamRadialDamage": 720,
                 "heavySlamRadius": 9,
                 "windUp": 0.69999999,
+                "ammoCost": 1,
+                "chargeTime": 0,
+                "forcedProc": [],
+                "secondaryEffects": {}
+            }
+        }
+    },
+    "Masseter Prime": {
+        "name": "Masseter Prime",
+        "uniqueName": "/Lotus/Weapons/Tenno/Melee/Swords/PrimeMasseter/PrimeMasseter",
+        "productCategory": "Melee",
+        "omegaAttenuation": 0.5,
+        "rivenType": "Melee Riven Mod",
+        "fireModes": {
+            "default": {
+                "damagePerShot": [
+                    145.60001,
+                    0,
+                    114.4,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "totalDamage": 260,
+                "criticalChance": 0.25999999,
+                "criticalMultiplier": 2.2,
+                "procChance": 0.36000001,
+                "fireRate": 1.0833334,
+                "blockingAngle": 55,
+                "comboDuration": 5,
+                "followThrough": 0.60000002,
+                "range": 2.9000001,
+                "slamAttack": 780,
+                "slamRadialDamage": 260,
+                "slamRadius": 10,
+                "slideAttack": 520,
+                "heavyAttackDamage": 1560,
+                "heavySlamAttack": 1300,
+                "heavySlamRadialDamage": 1300,
+                "heavySlamRadius": 10,
+                "windUp": 1.1,
                 "ammoCost": 1,
                 "chargeTime": 0,
                 "forcedProc": [],
@@ -6419,7 +6576,7 @@
         "name": "Azothane",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Swords/DaxDuviriTwoHandedKatana/DaxDuviriTwoHandedKatanaWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.69999999,
+        "omegaAttenuation": 0.80000001,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -6474,7 +6631,7 @@
         "name": "Syam",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Swords/DaxDuviriKatana/DaxDuviriKatanaWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.64999998,
+        "omegaAttenuation": 0.75,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -8221,7 +8378,7 @@
         "name": "Edun",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Polearms/DaxDuviriPolearm/DaxDuviriPolearmWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.69999999,
+        "omegaAttenuation": 0.80000001,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -8661,7 +8818,7 @@
         "name": "Hespar",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/HeavyScythe/DuviriScythe/DuviriHeavyScytheWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.80000001,
+        "omegaAttenuation": 0.85000002,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -8936,7 +9093,7 @@
         "name": "Sampotes",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Hammer/DaxDuviriHammer/DaxDuviriHammerWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.75,
+        "omegaAttenuation": 0.89999998,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -10531,7 +10688,7 @@
         "name": "Sarofang",
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Axe/WolfFrameAxeWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.75,
+        "omegaAttenuation": 0.80000001,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -10902,7 +11059,7 @@
         "name": "Steflos",
         "uniqueName": "/Lotus/Weapons/Tenno/LongGuns/TnoLotusPodShotgun/TnoLotusPodShotgun",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.80000001,
+        "omegaAttenuation": 0.94999999,
         "rivenType": "Shotgun Riven Mod",
         "fireModes": {
             "default": {
@@ -10998,7 +11155,7 @@
         "name": "Fulmin",
         "uniqueName": "/Lotus/Weapons/Tenno/LongGuns/TnWispRifle/TnWispRifle",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.80000001,
+        "omegaAttenuation": 0.85000002,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -11238,7 +11395,7 @@
         "name": "Perigale",
         "uniqueName": "/Lotus/Weapons/Tenno/LongGuns/TnQuadSniper/TnQuadSniper",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.85000002,
+        "omegaAttenuation": 0.94999999,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -12438,7 +12595,7 @@
         "name": "Fulmin Prime",
         "uniqueName": "/Lotus/Weapons/Tenno/LongGuns/PrimeFulmin/PrimeFulmin",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.60000002,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -12726,7 +12883,7 @@
         "name": "Rauta",
         "uniqueName": "/Lotus/Weapons/Tenno/LongGuns/PaxDuviricusShotgun/PaxDuviricusShotgun",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.60000002,
+        "omegaAttenuation": 0.75,
         "rivenType": "Shotgun Riven Mod",
         "fireModes": {
             "default": {
@@ -13398,7 +13555,7 @@
         "name": "Nataruk",
         "uniqueName": "/Lotus/Weapons/Tenno/Bows/Omicrus/OmicrusPlayerWep",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.60000002,
+        "omegaAttenuation": 0.64999998,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -13445,7 +13602,7 @@
         "name": "Cinta",
         "uniqueName": "/Lotus/Weapons/Tenno/Bows/DaxDuviriAsymetricalBow/DaxDuviriAsymmetricalLongBowPlayerWeapon",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.69999999,
+        "omegaAttenuation": 0.85000002,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -13925,7 +14082,7 @@
         "name": "Larkspur Prime",
         "uniqueName": "/Lotus/Weapons/Tenno/Archwing/Primary/PrimeLarkspur/PrimeLarkspurWeapon",
         "productCategory": "SpaceGuns",
-        "omegaAttenuation": 0.60000002,
+        "omegaAttenuation": 0.64999998,
         "rivenType": "Archgun Riven Mod",
         "fireModes": {
             "default": {
@@ -14459,7 +14616,7 @@
         "name": "Corufell",
         "uniqueName": "/Lotus/Weapons/Tenno/Archwing/Melee/ExaltedArchScythe/ExaltedAWScytheWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.64999998,
+        "omegaAttenuation": 0.75,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -17824,7 +17981,7 @@
                     0,
                     0,
                     0,
-                    1,
+                    20,
                     0,
                     0,
                     0,
@@ -17837,16 +17994,16 @@
                 "criticalChance": 0.38999999,
                 "criticalMultiplier": 2.7,
                 "procChance": 0.13,
-                "fireRate": 120.000001,
+                "fireRate": 12.000001,
                 "accuracy": 100,
                 "noise": "ALARMING",
                 "trigger": "HELD",
-                "magazineSize": 70000,
+                "magazineSize": 70,
                 "reloadTime": 1.5,
-                "multishot": 2,
+                "multishot": 1,
                 "ammoCost": 0.5,
                 "chargeTime": 0,
-                "forcedProc": [2],
+                "forcedProc": [],
                 "secondaryEffects": {}
             }
         }
@@ -19076,7 +19233,7 @@
         "name": "Slaytra",
         "uniqueName": "/Lotus/Weapons/Grineer/Melee/GrnSharbola/GrnSharbolaWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.85000002,
+        "omegaAttenuation": 0.89999998,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -20424,7 +20581,7 @@
         "name": "Gotva Prime",
         "uniqueName": "/Lotus/Weapons/Grineer/LongGuns/GrnOrokinRifle/GrnOrokinRifleWeapon",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.64999998,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -23469,7 +23626,7 @@
         "name": "Stropha",
         "uniqueName": "/Lotus/Weapons/Corpus/Melee/Gunblade/CrpGunBlade/CrpGunbladeWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.55000001,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -23744,7 +23901,7 @@
         "name": "Prisma Ohma",
         "uniqueName": "/Lotus/Weapons/Corpus/Melee/CrpTonfa/CrpPrismaTonfa",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.69999999,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -24967,7 +25124,7 @@
         "name": "Prisma Lenz",
         "uniqueName": "/Lotus/Weapons/Corpus/Bow/Longbow/PrismaLenz/PrismaLenzWeapon",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.5,
+        "omegaAttenuation": 0.69999999,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -25015,7 +25172,7 @@
         "name": "Tenet Plinx",
         "uniqueName": "/Lotus/Weapons/Corpus/BoardExec/Secondary/CrpBEPlinx/CrpBEPlinxWeapon",
         "productCategory": "Pistols",
-        "omegaAttenuation": 0.60000002,
+        "omegaAttenuation": 0.64999998,
         "rivenType": "Pistol Riven Mod",
         "fireModes": {
             "default": {
@@ -25260,7 +25417,7 @@
         "name": "Tenet Ferrox",
         "uniqueName": "/Lotus/Weapons/Corpus/BoardExec/Primary/CrpBEFerrox/CrpBEFerrox",
         "productCategory": "LongGuns",
-        "omegaAttenuation": 0.85000002,
+        "omegaAttenuation": 0.94999999,
         "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
@@ -25987,7 +26144,7 @@
                 "multishot": 1,
                 "ammoCost": 1,
                 "chargeTime": 0,
-                "forcedProc": [6],
+                "forcedProc": [],
                 "secondaryEffects": {}
             }
         }
@@ -26264,7 +26421,7 @@
         "name": "Sun & Moon",
         "uniqueName": "/Lotus/Types/Friendly/PlayerControllable/Weapons/DuviriDualSwordsWeapon",
         "productCategory": "Melee",
-        "omegaAttenuation": 0.69999999,
+        "omegaAttenuation": 0.80000001,
         "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
@@ -26369,6 +26526,7 @@
         "uniqueName": "/Lotus/Types/Sentinels/SentinelWeapons/SentShotgun",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
+        "rivenType": "Shotgun Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -26608,6 +26766,7 @@
         "uniqueName": "/Lotus/Types/Sentinels/SentinelWeapons/PrimeSentShotgun",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
+        "rivenType": "Shotgun Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -27189,7 +27348,6 @@
         "uniqueName": "/Lotus/Types/Friendly/Pets/MoaPets/MoaPetComponents/HextraWeapon",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
-        "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -28346,6 +28504,7 @@
         "uniqueName": "/Lotus/Types/Friendly/Pets/ZanukaPets/ZanukaPetMeleeWeaponIP",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
+        "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [

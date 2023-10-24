@@ -8,7 +8,7 @@ import os
 import math
 import procs as pm
 
-import constants
+import constants as const
 from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -38,6 +38,7 @@ class Unit:
         self.proc_controller = ProcController(self)
 
         self.unique_proc_count = 0
+        self.unique_proc_delta = False
         self.armor_dr = np.array([1]*20, dtype=float)
         self.set_armor_dr()
 
@@ -57,48 +58,62 @@ class Unit:
     def set_armor_dr(self):
         current_armor = self.armor.current_value
         if int(current_armor) >= 1:
-            np.reciprocal((self.armor.modifier*(-1)+2)*(current_armor * constants.ARMOR_RATIO)+1, out=self.armor_dr)
+            np.reciprocal((self.armor.modifier*(-1)+2)*(current_armor * const.ARMOR_RATIO)+1, out=self.armor_dr)
             np.multiply(self.armor.modifier, self.armor_dr, out=self.armor_dr)
-            self.armor_dr[14] = 1
+            self.armor_dr[const.DT_INDEX["DT_FINISHER"]] = 1
+            self.armor_dr[const.DT_INDEX["DT_CINEMATIC"]] = 1
+            self.armor_dr[const.DT_INDEX["DT_HEALTH_DRAIN"]] = 1
+            
 
     def pellet_hit(self, fire_mode:FireMode, enemy:"Unit"):
-        # apply critical multiplier to the damage instance
-        # TODO this has to be inside apply_damage to account for body part
-        critical_tier = int(fire_mode.criticalChance.modded) + int(random() < fire_mode.criticalChance.modded % 1)
-        effective_critical_multiplier = critical_tier * (fire_mode.criticalMultiplier.modded - 1) + 1
+        # calculate conditional multiplier
+        if fire_mode.unique_proc_count != self.unique_proc_count and fire_mode.condition_overloaded:
+            fire_mode.unique_proc_count = self.unique_proc_count
+            fire_mode.calc_modded_damage()
 
         #apply damage
-        status_damage = self.apply_damage(fire_mode, fire_mode.damagePerShot.quantized.copy(), fire_mode.elementalDamagePerShot.quantized, fire_mode.damagePerShot.modded, effective_critical_multiplier, source="pellet")
+        status_damage = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, fire_mode.totalDamage.modded, apply_critical=True, source="pellet")
 
         # apply status procs 
         self.apply_status(fire_mode, status_damage)
 
-    def apply_damage(self, fire_mode:FireMode, damage:np.array, bonus_damage:np.array, base_damage: np.array, critical_multiplier=1, body_part=None, source="None"):
+    def apply_damage(self, fire_mode:FireMode, damage:np.array, total_base_damage: float, apply_critical=False, body_part=None, source="None"):
         # copy the arrays
-        damage_total = (damage + bonus_damage).copy()
-        damage_status = base_damage.copy()
+        damage_total = damage.copy()
         
         # body part bonuses
         damage_total *= 1
-        damage_status *= 1
+        total_base_damage *= 1
 
         # # faction bonuses
-        faction_bonus = (1 + fire_mode.factionDamage_m["base"])
+        faction_bonus = (1 + fire_mode.factionDamage_m["base"].value)
         damage_total *= faction_bonus
-        damage_status *= faction_bonus
+        total_base_damage *= faction_bonus
 
         # # apply crit
-        damage_total *= critical_multiplier
-        damage_status *= critical_multiplier
+        if apply_critical:
+            puncture_count = self.proc_controller.puncture_proc_manager.count
+            criticalChance_puncture = 0 if fire_mode.radial else puncture_count * 0.05
+            critical_chance = fire_mode.criticalChance.modded + criticalChance_puncture
+            critical_tier = int(critical_chance) + int(random() < critical_chance % 1)
 
-        # print(sum(damage_total), sum(damage_status))
+            if critical_tier > 0:
+                bodypart_crit_bonus = 1 if fire_mode.radial else 1
+
+                cold_count = self.proc_controller.cold_proc_manager.count
+                criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
+                base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
+
+                
+                effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
+
+                damage_total *= effective_critical_multiplier
+                total_base_damage *= effective_critical_multiplier
 
         og, sg, hg = self.remove_protection(damage_total)
 
-        # print(f"Damage at {self.simulation.time:.2f}s: {([f'{og:.1f}', f'{sg:.1f}', f'{hg:.1f}'])}, source:{source}")
-
         if self.health.current_value <= 0 and self.overguard.current_value <= 0:
-            return damage_status
+            return total_base_damage
         
         if self.overguard.current_value < 0:
             ratio = abs(self.overguard.current_value/og)
@@ -115,10 +130,11 @@ class Unit:
             self.shield.current_value = 0
             self.remove_protection(damage_total * ratio)
         
-        return damage_status
+        return total_base_damage
 
-    def apply_status(self, fire_mode:FireMode, status_damage: np.array):
-        status_tier = int(fire_mode.procChance.modded) + int(random() < fire_mode.procChance.modded % 1)
+    def apply_status(self, fire_mode:FireMode, status_damage: float):
+        total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier'].value
+        status_tier = int(total_status_chance) + int(random() < (total_status_chance) % 1)
 
         for _ in range(status_tier):
             roll = random()
@@ -149,7 +165,7 @@ class Unit:
     
     def get_current_stats(self):
         vals = {"time":self.simulation.time, "overguard":self.overguard.current_value, "shield":self.shield.current_value\
-                     , "health":self.health.current_value, "armor":self.armor.current_value}
+                     , "health":self.health.current_value, "armor":self.armor.current_value, "call_index":self.simulation.call_index}
 
         return vals
     
@@ -159,16 +175,16 @@ class Unit:
         return vals
     
     def apply_corrosive_armor_strip(self, proc_manager:pm.DefaultProcManager):
-        armor_strip = constants.CORROSIVE_ARMOR_STRIP[proc_manager.count]
+        armor_strip = const.CORROSIVE_ARMOR_STRIP[proc_manager.count]
         self.armor.apply_affliction("Corrosive armor strip", armor_strip)
 
     def apply_viral_debuff(self, proc_manager:pm.DefaultProcManager):
-        debuff = constants.VIRAL_DEBUFF[proc_manager.count]
+        debuff = const.VIRAL_DEBUFF[proc_manager.count]
         self.health.debuffs["Viral debuff"] = debuff
         self.health.apply_debuff("Viral debuff", debuff)
 
     def apply_magnetic_debuff(self, proc_manager:pm.DefaultProcManager):
-        debuff = constants.MAGNETIC_DEBUFF[proc_manager.count]
+        debuff = const.MAGNETIC_DEBUFF[proc_manager.count]
         self.shield.apply_debuff("Magnetic debuff", debuff)
 
 
@@ -181,7 +197,7 @@ class Protection:
 
         self.type = type
         self.type_variant = type_variant
-        self.modifier = constants.modifiers[self.type_variant]
+        self.modifier = const.modifiers[self.type_variant]
         self.level_multiplier = self.get_level_multiplier()
 
         self.max_value = self.base * self.level_multiplier
@@ -212,7 +228,7 @@ class Protection:
             self.unit.set_armor_dr()
 
     def get_level_multiplier(self):
-        scale_factor_list = constants.protection_scale_factors[self.type]
+        scale_factor_list = const.protection_scale_factors[self.type]
         selected_factors = None
         for scale_factor in scale_factor_list:
             if scale_factor["is_eximus"] != self.unit.is_eximus:
@@ -287,7 +303,7 @@ class ProcController():
                                 self.gas_proc_manager, self.magnetic_proc_manager, self.viral_proc_manager,
                                 self.corrosive_proc_manager, self.void_proc_manager]
 
-    def add_proc(self, proc_index:int, fire_mode:FireMode, status_damage: np.array):
+    def add_proc(self, proc_index:int, fire_mode:FireMode, status_damage: float):
         self.proc_managers[proc_index].add_proc(fire_mode, status_damage)
 
     def reset(self):
