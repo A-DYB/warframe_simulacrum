@@ -35,11 +35,12 @@ class Simulacrum:
         data = [stats]
 
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
+        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
         for enemy in enemies:
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
                 self.time, _, event = heapq.heappop(self.event_queue)
-                event.func(event.fire_mode, enemy)
+                
+                event.func(**event.kwargs)
 
                 if stats_changed(data[-1], enemy):
                     sts = enemy.get_current_stats()
@@ -129,7 +130,7 @@ class Simulacrum:
 
     def fast_run(self, enemies:List[Unit], fire_mode:FireMode):
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode, fire_mode.pull_trigger, event_time)))
+        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
 
         for enemy in enemies:
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:

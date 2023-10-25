@@ -107,7 +107,7 @@ class FireMode():
 
         self.load_mods()
         self.apply_mods()
-        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"] > 0) or (self.damagePerShot_m["condition_overload_multiplier"] > 0)
+        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"].value > 0) or (self.damagePerShot_m["condition_overload_multiplier"].value > 0)
 
     def reset(self):
         self.attack_index = 1
@@ -206,7 +206,7 @@ class FireMode():
         self.damagePerShot.modded = (self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier
         self.totalDamage.modded = self.totalDamage.base * damage_multiplier
 
-    def pull_trigger(self, fire_mode, enemy:Unit):
+    def pull_trigger(self, enemy:Unit):
         multishot_roll = get_tier(self.multishot.modded)
         multishot = multishot_roll
 
@@ -219,11 +219,11 @@ class FireMode():
 
         for _ in range(multishot):
             fm_time = self.simulation.time + self.embedDelay.modded
-            heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(self, enemy.pellet_hit, fm_time, name="Pellet hit")))
+            heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=self)))
 
             for fme in self.fire_mode_effects:
                 fme_time = fme.embedDelay + fm_time
-                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(fme, enemy.pellet_hit, fme_time, name="Pellet hit")))
+                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=fme)))
 
 
         if self.magazineSize.current > 0:
@@ -232,7 +232,7 @@ class FireMode():
             self.magazineSize.current = self.magazineSize.modded
             next_event = self.simulation.time + max(self.reloadTime.modded, self.fireTime.modded) + self.chargeTime.modded
 
-        heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.get_call_index(), EventTrigger(fire_mode, self.pull_trigger, next_event)))
+        heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.get_call_index(), EventTrigger(self.pull_trigger, enemy=enemy)))
 
 def aid(x):
     # This function returns the memory
@@ -320,10 +320,9 @@ class Mod():
 
 
 class EventTrigger():
-    def __init__(self, fire_mode:[FireModeEffect, FireMode], func, time:int, name="", info_callback=None) -> None:
-        self.fire_mode = fire_mode
-        self.func = func # should accept FireMode and Unit as arguments
-        self.time = time   
+    def __init__(self, func, name="", info_callback=None, **kwargs) -> None:
+        self.func = func 
+        self.kwargs = kwargs # kwargs for func
         self.name = name
         self.info_callback = info_callback
 

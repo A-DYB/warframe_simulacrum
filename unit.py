@@ -37,6 +37,8 @@ class Unit:
 
         self.proc_controller = ProcController(self)
 
+        self.bodypart_multipliers = dict(body=dict(multiplier=1,critical_damage_multiplier=1), head=dict(multiplier=3,critical_damage_multiplier=2))
+
         self.unique_proc_count = 0
         self.unique_proc_delta = False
         self.armor_dr = np.array([1]*20, dtype=float)
@@ -65,72 +67,68 @@ class Unit:
             self.armor_dr[const.DT_INDEX["DT_HEALTH_DRAIN"]] = 1
             
 
-    def pellet_hit(self, fire_mode:FireMode, enemy:"Unit"):
+    def pellet_hit(self, fire_mode:FireMode, bodypart='body'):
         # calculate conditional multiplier
         if fire_mode.unique_proc_count != self.unique_proc_count and fire_mode.condition_overloaded:
             fire_mode.unique_proc_count = self.unique_proc_count
             fire_mode.calc_modded_damage()
 
         #apply damage
-        status_damage = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, fire_mode.totalDamage.modded, apply_critical=True, source="pellet")
+        cd = self.get_critical_multiplier(fire_mode, bodypart)
+        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd)
 
         # apply status procs 
-        self.apply_status(fire_mode, status_damage)
+        self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier)
 
-    def apply_damage(self, fire_mode:FireMode, damage:np.array, total_base_damage: float, apply_critical=False, body_part=None, source="None"):
-        # copy the arrays
-        damage_total = damage.copy()
+    def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body'):
+        multiplier = critical_multiplier
         
         # body part bonuses
-        damage_total *= 1
-        total_base_damage *= 1
+        multiplier *= self.bodypart_multipliers[bodypart]['multiplier']
 
         # # faction bonuses
         faction_bonus = (1 + fire_mode.factionDamage_m["base"].value)
-        damage_total *= faction_bonus
-        total_base_damage *= faction_bonus
+        multiplier *= faction_bonus
 
-        # # apply crit
-        if apply_critical:
-            puncture_count = self.proc_controller.puncture_proc_manager.count
-            criticalChance_puncture = 0 if fire_mode.radial else puncture_count * 0.05
-            critical_chance = fire_mode.criticalChance.modded + criticalChance_puncture
-            critical_tier = int(critical_chance) + int(random() < critical_chance % 1)
-
-            if critical_tier > 0:
-                bodypart_crit_bonus = 1 if fire_mode.radial else 1
-
-                cold_count = self.proc_controller.cold_proc_manager.count
-                criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
-                base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
-
-                
-                effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
-
-                damage_total *= effective_critical_multiplier
-                total_base_damage *= effective_critical_multiplier
-
-        og, sg, hg = self.remove_protection(damage_total)
+        og, sg, hg = self.remove_protection(damage * multiplier)
 
         if self.health.current_value <= 0 and self.overguard.current_value <= 0:
-            return total_base_damage
+            return multiplier
         
         if self.overguard.current_value < 0:
             ratio = abs(self.overguard.current_value/og)
             self.overguard.current_value = 0
-            og, sg, hg = self.remove_protection(damage_total * ratio)
+            og, sg, hg = self.remove_protection(damage * multiplier * ratio)
 
             if self.shield.current_value < 0:
                 ratio = abs(self.shield.current_value/sg)
                 self.shield.current_value = 0
-                self.remove_protection(damage_total * ratio) 
+                self.remove_protection(damage * multiplier * ratio) 
 
         elif self.shield.current_value < 0:
             ratio = abs(self.shield.current_value/sg)
             self.shield.current_value = 0
-            self.remove_protection(damage_total * ratio)
+            self.remove_protection(damage * multiplier * ratio)
         
-        return total_base_damage
+        return multiplier
+    
+    def get_critical_multiplier(self, fire_mode:FireMode, bodypart:str):
+        puncture_count = self.proc_controller.puncture_proc_manager.count
+        criticalChance_puncture = 0 if fire_mode.radial else puncture_count * 0.05
+        critical_chance = fire_mode.criticalChance.modded + criticalChance_puncture
+        critical_tier = int(critical_chance) + int(random() < critical_chance % 1)
+
+        if critical_tier > 0:
+            bodypart_crit_bonus = 1 if fire_mode.radial else self.bodypart_multipliers[bodypart]['critical_damage_multiplier']
+
+            cold_count = self.proc_controller.cold_proc_manager.count
+            criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
+            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
+
+            
+            effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
+            return effective_critical_multiplier
+        return 1
 
     def apply_status(self, fire_mode:FireMode, status_damage: float):
         total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier'].value
@@ -186,7 +184,6 @@ class Unit:
     def apply_magnetic_debuff(self, proc_manager:pm.DefaultProcManager):
         debuff = const.MAGNETIC_DEBUFF[proc_manager.count]
         self.shield.apply_debuff("Magnetic debuff", debuff)
-
 
 class Protection:
     def __init__(self, unit: Unit, base: int, type: str, type_variant: str) -> None:
@@ -309,3 +306,8 @@ class ProcController():
     def reset(self):
         for pm in self.proc_managers:
             pm.reset()
+
+class DamageController():
+    def __init__(self, enemy: Unit) -> None:
+        self.enemy = enemy
+
