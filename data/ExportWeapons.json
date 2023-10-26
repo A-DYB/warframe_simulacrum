@@ -2511,7 +2511,35 @@
                 "ammoCost": 1,
                 "chargeTime": 0,
                 "forcedProc": [5],
-                "secondaryEffects": {}
+                "secondaryEffects": {
+                    "test": {
+                        "damagePerShot": [
+                            0,
+                            10,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ],
+                        "totalDamage": 10,
+                        "embedDelay": 0.1,
+                        "forcedProc": []
+                    }
+                }
             }
         }
     },

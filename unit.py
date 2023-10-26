@@ -29,6 +29,7 @@ class Unit:
         self.type: str = unit_data["type"]
         self.is_eximus:bool = unit_data.get("is_eximus", False)
         self.procImmunities: np.array = np.array([1]*20, dtype=float)
+        self.damage_controller_type = unit_data.get("damage_controller_type", "normal")
 
         self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
         self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
@@ -36,6 +37,7 @@ class Unit:
         self.overguard = Protection(self, unit_data["base_overguard"], "overguard", "Overguard")
 
         self.proc_controller = ProcController(self)
+        self.damage_controller = DamageController(self)
 
         self.bodypart_multipliers = dict(body=dict(multiplier=1,critical_damage_multiplier=1), head=dict(multiplier=3,critical_damage_multiplier=2))
 
@@ -73,15 +75,13 @@ class Unit:
             fire_mode.unique_proc_count = self.unique_proc_count
             fire_mode.calc_modded_damage()
 
-        #apply damage
         cd = self.get_critical_multiplier(fire_mode, bodypart)
         enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd)
 
-        # apply status procs 
         self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier)
 
     def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body'):
-        multiplier = critical_multiplier
+        multiplier = 1
         
         # body part bonuses
         multiplier *= self.bodypart_multipliers[bodypart]['multiplier']
@@ -90,7 +90,7 @@ class Unit:
         faction_bonus = (1 + fire_mode.factionDamage_m["base"].value)
         multiplier *= faction_bonus
 
-        og, sg, hg = self.remove_protection(damage * multiplier)
+        og, sg, hg = self.remove_protection(fire_mode, damage * multiplier, critical_multiplier)
 
         if self.health.current_value <= 0 and self.overguard.current_value <= 0:
             return multiplier
@@ -98,17 +98,17 @@ class Unit:
         if self.overguard.current_value < 0:
             ratio = abs(self.overguard.current_value/og)
             self.overguard.current_value = 0
-            og, sg, hg = self.remove_protection(damage * multiplier * ratio)
+            og, sg, hg = self.remove_protection(fire_mode, damage * multiplier * ratio, 1)
 
             if self.shield.current_value < 0:
                 ratio = abs(self.shield.current_value/sg)
                 self.shield.current_value = 0
-                self.remove_protection(damage * multiplier * ratio) 
+                self.remove_protection(fire_mode, damage * multiplier * ratio, 1) 
 
         elif self.shield.current_value < 0:
             ratio = abs(self.shield.current_value/sg)
             self.shield.current_value = 0
-            self.remove_protection(damage * multiplier * ratio)
+            self.remove_protection(fire_mode, damage * multiplier * ratio, 1)
         
         return multiplier
     
@@ -146,16 +146,20 @@ class Unit:
         for proc_index in fire_mode.forcedProc:
             self.proc_controller.add_proc(proc_index, fire_mode, status_damage)
 
-    def remove_protection(self, damage:np.array):
+    def remove_protection(self, fire_mode: FireMode, damage:np.array, critical_multiplier):
         overguard = self.overguard.current_value
         shield = self.shield.current_value
         health = self.health.current_value
         if self.overguard.current_value > 0:
-            self.overguard.current_value -= sum(damage * self.overguard.modifier * self.overguard.total_debuff)
-        elif self.shield.current_value > 0:
+            tot_damage = sum(damage * self.overguard.modifier * self.overguard.total_debuff)
+            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
+            self.overguard.current_value -= tot_damage
+        elif self.shield.current_value > 0: # TODO
             self.health.current_value -= damage[6] * self.armor_dr[6] * self.health.modifier[6] * self.health.total_debuff
             self.shield.current_value -= sum(damage * self.shield.modifier * self.shield.total_debuff)
         else:
+            tot_damage = sum(damage * self.armor_dr * self.health.modifier * self.health.total_debuff)
+            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
             self.health.current_value -= sum(damage * self.armor_dr * self.health.modifier * self.health.total_debuff)
         
         # return applied damage
@@ -163,7 +167,7 @@ class Unit:
     
     def get_current_stats(self):
         vals = {"time":self.simulation.time, "overguard":self.overguard.current_value, "shield":self.shield.current_value\
-                     , "health":self.health.current_value, "armor":self.armor.current_value, "call_index":self.simulation.call_index}
+                     , "health":self.health.current_value, "armor":self.armor.current_value}
 
         return vals
     
@@ -310,4 +314,27 @@ class ProcController():
 class DamageController():
     def __init__(self, enemy: Unit) -> None:
         self.enemy = enemy
+        self.name_controller = {"normal":self.normal, "static_dps":self.static_dps}
+        self.func = self.name_controller[enemy.damage_controller_type]
 
+    def normal(self, fire_mode: FireMode, damage: float):
+        return damage
+
+    def static_dps(self, fire_mode: FireMode, damage: float):
+        # Weird shotgun mechanic
+        dps_multiplier = fire_mode.fireRate.modded * fire_mode.multishot.modded
+        dps_multiplier = dps_multiplier/2 if fire_mode.multishot.base > 1 else dps_multiplier
+        tier0_dps = damage * dps_multiplier
+
+        if tier0_dps <= 1000:
+            return damage
+        elif tier0_dps >= 1000 and tier0_dps <= 2500:
+            return ((0.8*tier0_dps+200))/dps_multiplier
+        elif tier0_dps >= 2500 and tier0_dps <= 5000:
+            return ((0.7*tier0_dps+450))/dps_multiplier
+        elif tier0_dps >= 5000 and tier0_dps <= 10000:
+            return ((0.4*tier0_dps+1950))/dps_multiplier
+        elif tier0_dps >= 10000 and tier0_dps <= 20000:
+            return ((0.2*tier0_dps+3950))/dps_multiplier
+        elif tier0_dps >= 20000:
+            return ((0.1*tier0_dps+5950))/dps_multiplier

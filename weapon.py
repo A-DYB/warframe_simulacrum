@@ -43,7 +43,7 @@ class FireMode():
         self.name = name
         self.data = weapon.data["fireModes"][self.name]
         self.simulation = weapon.simulation
-        self.fire_mode_effects:List[FireModeEffect] = [FireModeEffect(self, name) for name in self.data.get("secondaryEffects", {})]
+        self.primary_effect = True
         self.attack_index = 1
 
         self.trigger = self.data.get("trigger", "AUTO")
@@ -105,9 +105,11 @@ class FireMode():
         self.factionDamage_m = {"base":Mod()}
         self.ammoCost_m = {"base":Mod(), "energized_munitions":Mod()}
 
+        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"].value > 0) or (self.damagePerShot_m["condition_overload_multiplier"].value > 0)
+        self.fire_mode_effects:List[FireModeEffect] = [FireModeEffect(self, name) for name in self.data.get("secondaryEffects", {})]
+
         self.load_mods()
         self.apply_mods()
-        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"].value > 0) or (self.damagePerShot_m["condition_overload_multiplier"].value > 0)
 
     def reset(self):
         self.attack_index = 1
@@ -130,9 +132,9 @@ class FireMode():
         # self.damagePerShot_m["final_multiplier"].value = 1
         self.damagePerShot_m["base"].value = 2.2
         self.damagePerShot_m["additive_base"].value = 4
-        self.factionDamage_m["base"].value = 0.55 + 0.5
+        # self.factionDamage_m["base"].value = 0.55 + 0.5
         # self.slash_m["base"].value = 1.2
-        self.heat_m["base"].value = 0.9
+        # self.heat_m["base"].value = 0.9
 
 
     def apply_mods(self):
@@ -164,6 +166,9 @@ class FireMode():
         self.embedDelay.modded = self.embedDelay.base
         self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"].value) * max(0, 1 - self.ammoCost_m["energized_munitions"].value)
 
+        for fire_mode_effect in self.fire_mode_effects:
+            fire_mode_effect.apply_mods()
+
     def calc_full_damage_stack(self):
         np.copyto( self.damagePerShot.proportions, self.damagePerShot.base_proportions )
         self.damagePerShot.proportions[0] *= (1 + self.impact_m["base"].value)
@@ -190,6 +195,9 @@ class FireMode():
 
         self.calc_modded_damage()
 
+        for fire_mode_effect in self.fire_mode_effects:
+            fire_mode_effect.calc_full_damage_stack()
+
     def calc_modded_damage(self):
         self.damagePerShot.set_base_total(self.totalDamage.base + self.damagePerShot_m["additive_base"].value)
         self.totalDamage.base = self.damagePerShot.base_total
@@ -205,6 +213,9 @@ class FireMode():
 
         self.damagePerShot.modded = (self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier
         self.totalDamage.modded = self.totalDamage.base * damage_multiplier
+
+        for fire_mode_effect in self.fire_mode_effects:
+            fire_mode_effect.calc_modded_damage()
 
     def pull_trigger(self, enemy:Unit):
         multishot_roll = get_tier(self.multishot.modded)
@@ -222,8 +233,8 @@ class FireMode():
             heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=self)))
 
             for fme in self.fire_mode_effects:
-                fme_time = fme.embedDelay + fm_time
-                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=fme)))
+                fme_time = fme.embedDelay.modded + fm_time
+                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name=f"{fme.name} hit", fire_mode=fme)))
 
 
         if self.magazineSize.current > 0:
@@ -242,22 +253,32 @@ def aid(x):
 def get_tier(chance):
     return int(random()<(chance%1)) + int(chance)
 
-class FireModeEffect():
+class FireModeEffect(FireMode):
     def __init__(self, fire_mode:FireMode, name:str) -> None:
         self.fire_mode = fire_mode
         self.weapon = fire_mode.weapon
         self.name = name
-        self.next_event_timestamp = const.MAX_TIME_OFFSET
-        self.data = fire_mode.data["secondaryEffects"].value[self.name]
+        self.primary_effect = False
+        self.data = fire_mode.data["secondaryEffects"][self.name]
 
-        self.damagePerShot = np.array(self.data.get("damagePerShot", fire_mode.damagePerShot))
-        self.criticalChance = self.data.get("criticalChance", fire_mode.criticalChance)
-        self.criticalMultiplier = self.data.get("criticalMultiplier", fire_mode.criticalMultiplier)
+        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20)), dtype=float) )
+        self.totalDamage = Parameter( self.data.get("totalDamage", 0) )
+        self.criticalChance = self.data.get("criticalChance", fire_mode.criticalChance.base) 
+        self.criticalChance = Parameter(self.criticalChance) if not isinstance(self.criticalChance, Parameter) else self.criticalChance
+        self.criticalMultiplier = self.data.get("criticalMultiplier", fire_mode.criticalMultiplier.base) 
+        self.criticalMultiplier = Parameter(self.criticalMultiplier) if not isinstance(self.criticalMultiplier, Parameter) else self.criticalMultiplier
+        self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
         self.procChance = self.data.get("procChance", fire_mode.procChance)
+        self.procChance = Parameter(self.procChance) if not isinstance(self.procChance, Parameter) else self.procChance
 
-        self.multishot = self.data.get("multishot", 1)
-        self.embedDelay = self.data.get("embedDelay", 0)
+        self.multishot = Parameter( self.data.get("multishot", 1) )
+        self.embedDelay = Parameter( self.data.get("embedDelay", 0) )
         self.forcedProc = self.data.get("forcedProc", [])
+
+        self.fire_mode_effects:List[FireModeEffect] = []
+
+    def __getattr__(self, attr):
+        return getattr(self.fire_mode, attr)
 
 
 class DamageParameter():
@@ -279,10 +300,6 @@ class DamageParameter():
         
         self.base = self.base_proportions * value
         self.base_total = value
-
-    # def multiply(self, val):
-    #     self.modded *= val
-    #     self.quantized *= val
 
 
 class ModifyParameter():

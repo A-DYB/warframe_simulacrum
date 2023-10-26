@@ -32,18 +32,20 @@ class Simulacrum:
         stats = enemies[0].get_current_stats()
         stats['time'] = stats['time'] - 1e-6
         stats['name'] = ""
+        stats['call_index'] = -1
         data = [stats]
 
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
         heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
         for enemy in enemies:
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
-                self.time, _, event = heapq.heappop(self.event_queue)
+                self.time, call_index, event = heapq.heappop(self.event_queue)
                 
                 event.func(**event.kwargs)
 
                 if stats_changed(data[-1], enemy):
                     sts = enemy.get_current_stats()
+                    sts['call_index'] = call_index
                     sts["name"] = event.name
                     if event.info_callback is not None:
                         sts["name"] += f", {event.info_callback()}"
@@ -89,18 +91,20 @@ class Simulacrum:
         ci = df1['call_index'].iloc[0]
         name = df1['name'].iloc[0]
         
-        df2 = df[(df["call_index"] < ci) & (df["variable"] == vb)]
+        df2 = df[(df["time"] < t) & (df["variable"] == vb)]
         if len(df2.index) == 0 :
             delta = 0
             tdelta = 1
         else:
+            df2 = df2[(df2["time"] == df2["time"].max())]
             s2 = df2.iloc[-1]
             delta = s2['value'] - v
             tdelta = t - s2['time']
 
-
         txt = f"t={t:.1f}s, {vb}={v:.1f}\ndelta={(delta):.2f}\n{name}"
         left,right = self.ax.get_xlim()
+        top,bot = self.ax.get_ylim()
+        vspan = abs(top-bot)
         span = right-left
         if t > left+span/2:
             text_xoffset = (t-left)*(-0.25)
@@ -139,7 +143,6 @@ class Simulacrum:
                 
                 if self.time > 20 :
                     break
-        # print(self.time)
 
 def stats_changed(prev_data:dict, enemy:Unit):
     if prev_data["overguard"] == enemy.overguard.current_value and prev_data["shield"] == enemy.shield.current_value\
@@ -148,15 +151,13 @@ def stats_changed(prev_data:dict, enemy:Unit):
     return True
 
 def run_reapeated(simulation:Simulacrum, enemy:Unit, weapon:Weapon, count=20):
-    # t1 = time.time()
     for _ in range(count):
         simulation.reset()
         enemy.reset()
         weapon.reset()
 
         simulation.fast_run([enemy], weapon.fire_modes[0])
-    # t2 = time.time()
-    # print(t2-t1)
+
 
 def run_once(simulation:Simulacrum, enemy:Unit, weapon:Weapon):
     simulation.run_simulation([enemy], weapon.fire_modes[0])
