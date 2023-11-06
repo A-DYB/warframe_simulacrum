@@ -36,6 +36,7 @@
         "armor_type": "Ferrite",
         "shield_type": "None",
         "type": "ET_DEMOLISHER",
+        "damage_controller_type": "DC_STATIC_DPS_1",
         "faction": "Grineer",
         "base_overguard": 0,
         "is_eximus": false
@@ -290,14 +291,96 @@
         "base_armor": 50.0,
         "base_shield": 200.0,
         "base_level": 1.0,
-        "base_dr": 0.6,
+        "base_dr": 1.0,
+        "health_vulnerability": 0.375,
+        "shield_vulnerability": 1.5,
         "health_type": "Flesh",
         "armor_type": "Ferrite",
         "shield_type": "Shield",
         "type": "ET_ACOLYTE",
+        "damage_controller_type": "DC_STATIC_DPS_2",
+        "critical_controller_type": "CC_1",
         "faction": "Stalker",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":1
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6,
+                "max_stacks": 4,
+                "refresh": false,
+                "damage_scaling":1
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6,
+                "max_stacks": 4
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":1
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":1
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12,
+                "max_stacks": 4
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":1
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6,
+                "max_stacks": 4
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6,
+                "max_stacks": 4
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8,
+                "max_stacks": 4
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3,
+                "max_stacks": 1
+            }
+        }
     },
     "Charger": {
         "base_health": 80.0,

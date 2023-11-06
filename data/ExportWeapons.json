@@ -2498,10 +2498,10 @@
                     0
                 ],
                 "totalDamage": 36.000004,
-                "criticalChance": 1,
+                "criticalChance": 0.23999999,
                 "criticalMultiplier": 2.2,
                 "procChance": 0.10000002,
-                "fireRate": 1.05,
+                "fireRate": 7.0000005,
                 "accuracy": 14.285714,
                 "noise": "ALARMING",
                 "trigger": "AUTO",
@@ -2510,36 +2510,47 @@
                 "multishot": 1,
                 "ammoCost": 1,
                 "chargeTime": 0,
-                "forcedProc": [5],
-                "secondaryEffects": {
-                    "test": {
-                        "damagePerShot": [
-                            0,
-                            10,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0,
-                            0
-                        ],
-                        "totalDamage": 10,
-                        "embedDelay": 0.1,
-                        "forcedProc": []
-                    }
-                }
+                "forcedProc": [],
+                "secondaryEffects": {}
+            },
+            "heat": {
+                "damagePerShot": [
+                    2.4,
+                    34.4,
+                    3.2,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "totalDamage": 40,
+                "criticalChance": 0.23999999,
+                "criticalMultiplier": 2.2,
+                "procChance": 0.10000002,
+                "fireRate": 7.0000005,
+                "accuracy": 14.285714,
+                "noise": "ALARMING",
+                "trigger": "AUTO",
+                "magazineSize": 16,
+                "reloadTime": 1.7,
+                "multishot": 1,
+                "ammoCost": 1,
+                "chargeTime": 0,
+                "forcedProc": [],
+                "secondaryEffects": {}
             }
         }
     },
@@ -5012,6 +5023,7 @@
         "uniqueName": "/Lotus/Weapons/Tenno/Melee/Swords/TnDagathBladeWhip/TnDagathBladeWhip",
         "productCategory": "Melee",
         "omegaAttenuation": 0.5,
+        "rivenType": "Melee Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -14495,7 +14507,6 @@
         "uniqueName": "/Lotus/Weapons/Tenno/Archwing/Primary/ArchBurstGun/ArchBurstGun",
         "productCategory": "SpaceGuns",
         "omegaAttenuation": 1.3,
-        "rivenType": "Archgun Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -27376,6 +27387,7 @@
         "uniqueName": "/Lotus/Types/Friendly/Pets/MoaPets/MoaPetComponents/HextraWeapon",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
+        "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -27424,6 +27436,7 @@
         "uniqueName": "/Lotus/Types/Friendly/Pets/MoaPets/MoaPetComponents/CryoxionWeapon",
         "productCategory": "SentinelWeapons",
         "omegaAttenuation": 1,
+        "rivenType": "Rifle Riven Mod",
         "fireModes": {
             "default": {
                 "damagePerShot": [
@@ -28651,6 +28664,51 @@
                 "criticalChance": 0.1,
                 "criticalMultiplier": 3,
                 "procChance": 0.14999998,
+                "fireRate": 1,
+                "excludeFromCodex": true,
+                "sentinel": true,
+                "blockingAngle": 90,
+                "ammoCost": 1,
+                "chargeTime": 0,
+                "forcedProc": [],
+                "secondaryEffects": {}
+            }
+        }
+    },
+    "Tailwind": {
+        "name": "Tailwind",
+        "uniqueName": "/Lotus/Types/Friendly/Pets/ZanukaPets/ZanukaPetMeleeWeaponPS",
+        "productCategory": "SentinelWeapons",
+        "omegaAttenuation": 1,
+        "rivenType": "Melee Riven Mod",
+        "fireModes": {
+            "default": {
+                "damagePerShot": [
+                    450,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                "totalDamage": 450,
+                "criticalChance": 0,
+                "criticalMultiplier": 1,
+                "procChance": 0,
                 "fireRate": 1,
                 "excludeFromCodex": true,
                 "sentinel": true,

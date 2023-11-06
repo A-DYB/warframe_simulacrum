@@ -36,6 +36,30 @@ DT_INDEX = {"DT_IMPACT":0, "DT_PUNCTURE":1, "DT_SLASH":2, "DT_HEAT":3,
             "DT_SUICIDE":20,"DT_PHYSICAL":21,"DT_BASE_ELEMENTAL":22,"DT_COMPOUND_ELEMENTAL":23,
             "DT_ANY":0,"DT_INVALID":24}
 
+PT_INDEX = {"PT_IMPACT":0, "PT_PUNCTURE":1, "PT_SLASH":2, "PT_HEAT":3,
+            "PT_COLD":4,"PT_ELECTRIC":5,"PT_TOXIN":6,"PT_BLAST":7,
+            "PT_RADIATION":8,"PT_GAS":9,"PT_MAGNETIC":10,"PT_VIRAL":11,
+            "PT_CORROSIVE":12,"PT_FINISHER":13,"PT_RADIANT":14,"PT_SENTIENT":15,
+            "PT_CINEMATIC":16,"PT_SHIELD_DRAIN":17,"PT_HEALTH_DRAIN":18,"PT_ENERGY_DRAIN":19,
+            "PT_SUICIDE":20,"PT_PHYSICAL":21,"PT_BASE_ELEMENTAL":22,"PT_COMPOUND_ELEMENTAL":23,
+            "PT_ANY":24,"PT_INVALID":25}
+
+INDEX_DT = {v: k for k, v in DT_INDEX.items()}
+INDEX_PT = {v: k for k, v in PT_INDEX.items()}
+
+PROC_INFO = {"PT_IMPACT": {"name": "Impact", "duration": 6, "max_stacks": 5}, "PT_PUNCTURE": {"name": "Puncture","duration": 6,"max_stacks": 5},
+             "PT_SLASH": {"name": "Slash","duration": 6,"max_stacks": 50000, "damage_scaling":0.35}, "PT_HEAT": {"name": "Heat","duration": 6,"max_stacks": 50000,"refresh": True, "damage_scaling":0.5},
+             "PT_COLD": {"name": "Cold","duration": 6,"max_stacks": 9},"PT_ELECTRIC": {"name": "Electric","duration": 6,"max_stacks": 50000, "damage_scaling":0.5},
+             "PT_TOXIN": {"name": "Toxin","duration": 6,"max_stacks": 50000, "damage_scaling":0.5},"PT_BLAST": {"name": "Blast","duration": 10,"max_stacks": 4},"PT_RADIATION": {"name": "Radiation","duration": 12,"max_stacks": 10},
+             "PT_GAS": {"name": "Gas","duration": 6,"max_stacks": 10, "damage_scaling":0.5},"PT_MAGNETIC": {"name": "Magnetic","duration": 6,"max_stacks": 10},"PT_VIRAL": {"name": "Viral","duration": 6,"max_stacks": 10},
+             "PT_CORROSIVE": {"name": "Corrosive","duration": 8,"max_stacks": 10},"PT_RADIANT": {"name": "Void","duration": 3,"max_stacks": 1}}
+
+# PROC_INFO = {0:{"name":"Impact", "duration":6, "max_stacks":5}, 1:{"name":"Puncture", "duration":6, "max_stacks":5}, 2:{"name":"Slash", "duration":6, "max_stacks":10000}, 
+#              3:{"name":"Heat", "duration":6, "max_stacks":10000}, 4:{"name":"Cold", "duration":6, "max_stacks":9}, 5:{"name":"Electric", "duration":6, "max_stacks":10000}, 
+#              6:{"name":"Toxin", "duration":6, "max_stacks":10000}, 7:{"name":"Blast", "duration":6, "max_stacks":10}, 8:{"name":"Radiation", "duration":12, "max_stacks":10}, 
+#              9:{"name":"Gas", "duration":6, "max_stacks":10}, 10:{"name":"Magnetic", "duration":6, "max_stacks":10}, 11:{"name":"Viral", "duration":6, "max_stacks":10}, 
+#              12:{"name":"Corrosive", "duration":8, "max_stacks":10}, 13:{"name":"Void", "duration":3, "max_stacks":1}}
+
 modifiers = {
     'Ferrite' :          np.array([1.00, 1.50, 0.85, 1.00, 1.00, 1.00, 1.00, 0.75, 1.00, 1.00, 1.00, 1.00, 1.75, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
     'Alloy' :            np.array([1.00, 1.15, 0.50, 1.00, 1.25, 0.50, 1.00, 1.00, 1.75, 1.00, 0.50, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
@@ -87,11 +111,7 @@ protection_scale_factors = { "health": [{"is_eximus": False, "level_start":1, "l
                                         ]}
 
 
-PROC_INFO = {0:{"name":"Impact", "duration":6, "max_stacks":5}, 1:{"name":"Puncture", "duration":6, "max_stacks":5}, 2:{"name":"Slash", "duration":6, "max_stacks":10000}, 
-             3:{"name":"Heat", "duration":6, "max_stacks":10000}, 4:{"name":"Cold", "duration":6, "max_stacks":9}, 5:{"name":"Electric", "duration":6, "max_stacks":10000}, 
-             6:{"name":"Toxin", "duration":6, "max_stacks":10000}, 7:{"name":"Blast", "duration":6, "max_stacks":10}, 8:{"name":"Radiation", "duration":12, "max_stacks":10}, 
-             9:{"name":"Gas", "duration":6, "max_stacks":10}, 10:{"name":"Magnetic", "duration":6, "max_stacks":10}, 11:{"name":"Viral", "duration":6, "max_stacks":10}, 
-             12:{"name":"Corrosive", "duration":8, "max_stacks":10}, 13:{"name":"Void", "duration":3, "max_stacks":1}}
+
 
 PROCID_DAMAGETYPE = {i:i for i in range(14)}
 PROCID_DAMAGETYPE[2] = 16 # slash -> cinematic

@@ -29,7 +29,12 @@ class Unit:
         self.type: str = unit_data["type"]
         self.is_eximus:bool = unit_data.get("is_eximus", False)
         self.procImmunities: np.array = np.array([1]*20, dtype=float)
-        self.damage_controller_type = unit_data.get("damage_controller_type", "normal")
+        self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
+        self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NORMAL")
+        self.base_dr = unit_data.get("base_dr", 1)
+        self.health_vulnerability = unit_data.get("health_vulnerability", 1)
+        self.shield_vulnerability = unit_data.get("shield_vulnerability", 1)
+        self.proc_info = unit_data.get("proc_info", const.PROC_INFO)
 
         self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
         self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
@@ -39,12 +44,19 @@ class Unit:
         self.proc_controller = ProcController(self)
         self.damage_controller = DamageController(self)
 
+        if self.overguard.current_value > 0:
+            self.proc_controller.cold_proc_manager.max_stacks = 4
+            self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 0
+
         self.bodypart_multipliers = dict(body=dict(multiplier=1,critical_damage_multiplier=1), head=dict(multiplier=3,critical_damage_multiplier=2))
 
         self.unique_proc_count = 0
         self.unique_proc_delta = False
         self.armor_dr = np.array([1]*20, dtype=float)
         self.set_armor_dr()
+
+        self.last_damage = 0
+        self.last_t0_damage = 0
 
 
     def get_unit_data(self) -> dict:
@@ -58,6 +70,15 @@ class Unit:
         self.shield.reset()
         self.overguard.reset()
         self.proc_controller.reset()
+
+        if self.overguard.current_value > 0:
+            self.proc_controller.cold_proc_manager.max_stacks = 4
+            self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 0
+        
+        self.unique_proc_count = 0
+        self.unique_proc_delta = False
+        self.armor_dr = np.array([1]*20, dtype=float)
+        self.set_armor_dr()
     
     def set_armor_dr(self):
         current_armor = self.armor.current_value
@@ -67,6 +88,9 @@ class Unit:
             self.armor_dr[const.DT_INDEX["DT_FINISHER"]] = 1
             self.armor_dr[const.DT_INDEX["DT_CINEMATIC"]] = 1
             self.armor_dr[const.DT_INDEX["DT_HEALTH_DRAIN"]] = 1
+        else:
+            self.armor_dr *= 0
+            self.armor_dr += 1
             
 
     def pellet_hit(self, fire_mode:FireMode, bodypart='body'):
@@ -78,13 +102,14 @@ class Unit:
         cd = self.get_critical_multiplier(fire_mode, bodypart)
         enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd)
 
-        self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier)
+        self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier)
 
     def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body'):
         multiplier = 1
         
         # body part bonuses
-        multiplier *= self.bodypart_multipliers[bodypart]['multiplier']
+        multiplier *= self.bodypart_multipliers[bodypart]['multiplier'] 
+        multiplier *= self.base_dr
 
         # # faction bonuses
         faction_bonus = (1 + fire_mode.factionDamage_m["base"].value)
@@ -112,11 +137,44 @@ class Unit:
         
         return multiplier
     
+    def remove_protection(self, fire_mode: FireMode, damage:np.array, critical_multiplier):
+        overguard = self.overguard.current_value
+        shield = self.shield.current_value
+        health = self.health.current_value
+        tot_damage = 0
+        if self.overguard.current_value > 0:
+            tot_damage = sum(damage * self.overguard.modifier * self.overguard.total_debuff)
+            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
+            self.overguard.current_value -= tot_damage
+            if self.overguard.current_value <= 0:
+                self.proc_controller.cold_proc_manager.max_stacks = self.proc_info['DT_COLD']['max_stacks']
+                self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 1
+        elif self.shield.current_value > 0: # TODO
+            if damage[6] > 0:
+                health_damage = damage[6] * self.armor_dr[6] * self.health.modifier[6] * self.health.total_debuff * self.health_vulnerability
+                health_damage = self.damage_controller.func(fire_mode, health_damage) * critical_multiplier
+                self.health.current_value -= health_damage
+                tot_damage += health_damage
+
+            shield_damage = sum(damage * self.shield.modifier * self.shield.total_debuff) * self.shield_vulnerability
+            shield_damage = self.damage_controller.func(fire_mode, shield_damage) * critical_multiplier
+            self.shield.current_value -= shield_damage
+            tot_damage += shield_damage
+        else:
+            tot_damage = sum(damage * self.armor_dr * self.health.modifier * self.health.total_debuff) * self.health_vulnerability
+            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
+            self.health.current_value -= tot_damage
+
+        self.last_damage = tot_damage
+        # return applied damage
+        return overguard - self.overguard.current_value, shield - self.shield.current_value, health - self.health.current_value
+    
     def get_critical_multiplier(self, fire_mode:FireMode, bodypart:str):
         puncture_count = self.proc_controller.puncture_proc_manager.count
         criticalChance_puncture = 0 if fire_mode.radial else puncture_count * 0.05
         critical_chance = fire_mode.criticalChance.modded + criticalChance_puncture
         critical_tier = int(critical_chance) + int(random() < critical_chance % 1)
+        # self.damage_controller.critical_tier = critical_tier
 
         if critical_tier > 0:
             bodypart_crit_bonus = 1 if fire_mode.radial else self.bodypart_multipliers[bodypart]['critical_damage_multiplier']
@@ -124,11 +182,19 @@ class Unit:
             cold_count = self.proc_controller.cold_proc_manager.count
             criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
             base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
+            # self.damage_controller.critical_multiplier = base_critical_multiplier
 
-            
-            effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
+            effective_critical_multiplier = self.damage_controller.cc_func(base_critical_multiplier, critical_tier)
+
+            # effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
+            # self.damage_controller.tiered_critical_multiplier = effective_critical_multiplier
             return effective_critical_multiplier
-        return 1
+        else:
+            effective_critical_multiplier = self.damage_controller.cc_func(1, critical_tier)
+            return effective_critical_multiplier
+        
+        # self.damage_controller.tiered_critical_multiplier = 1
+        # return 1
 
     def apply_status(self, fire_mode:FireMode, status_damage: float):
         total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier'].value
@@ -145,25 +211,6 @@ class Unit:
 
         for proc_index in fire_mode.forcedProc:
             self.proc_controller.add_proc(proc_index, fire_mode, status_damage)
-
-    def remove_protection(self, fire_mode: FireMode, damage:np.array, critical_multiplier):
-        overguard = self.overguard.current_value
-        shield = self.shield.current_value
-        health = self.health.current_value
-        if self.overguard.current_value > 0:
-            tot_damage = sum(damage * self.overguard.modifier * self.overguard.total_debuff)
-            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
-            self.overguard.current_value -= tot_damage
-        elif self.shield.current_value > 0: # TODO
-            self.health.current_value -= damage[6] * self.armor_dr[6] * self.health.modifier[6] * self.health.total_debuff
-            self.shield.current_value -= sum(damage * self.shield.modifier * self.shield.total_debuff)
-        else:
-            tot_damage = sum(damage * self.armor_dr * self.health.modifier * self.health.total_debuff)
-            tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
-            self.health.current_value -= sum(damage * self.armor_dr * self.health.modifier * self.health.total_debuff)
-        
-        # return applied damage
-        return overguard - self.overguard.current_value, shield - self.shield.current_value, health - self.health.current_value
     
     def get_current_stats(self):
         vals = {"time":self.simulation.time, "overguard":self.overguard.current_value, "shield":self.shield.current_value\
@@ -175,6 +222,9 @@ class Unit:
         vals = {"overguard":self.overguard.max_value, "shield":self.shield.max_value\
                      , "health":self.health.max_value, "armor":self.armor.max_value}
         return vals
+    
+    def get_last_crit_info(self):
+        return f"Tier {self.damage_controller.critical_tier}, crit mult = {self.damage_controller.tiered_critical_multiplier:.3f}"
     
     def apply_corrosive_armor_strip(self, proc_manager:pm.DefaultProcManager):
         armor_strip = const.CORROSIVE_ARMOR_STRIP[proc_manager.count]
@@ -283,20 +333,20 @@ class Protection:
 class ProcController():
     def __init__(self, enemy: Unit) -> None:
         self.enemy = enemy
-        self.impact_proc_manager = pm.DefaultProcManager(enemy, 0)
-        self.puncture_proc_manager = pm.DefaultProcManager(enemy, 1)
-        self.slash_proc_manager = pm.ContainerizedProcManager(enemy, 2)
-        self.heat_proc_manager = pm.HeatProcManager(enemy, 3)
-        self.cold_proc_manager = pm.DefaultProcManager(enemy, 4)
-        self.electric_proc_manager = pm.AOEProcManager(enemy, 5)
-        self.toxin_proc_manager = pm.ContainerizedProcManager(enemy, 6)
-        self.blast_proc_manager = pm.DefaultProcManager(enemy, 7)
-        self.radiation_proc_manager = pm.DefaultProcManager(enemy, 8)
-        self.gas_proc_manager = pm.AOEProcManager(enemy, 9)
-        self.magnetic_proc_manager = pm.DefaultProcManager(enemy, 10, count_change_callback=enemy.apply_magnetic_debuff)
-        self.viral_proc_manager = pm.DefaultProcManager(enemy, 11, count_change_callback=enemy.apply_viral_debuff)
-        self.corrosive_proc_manager = pm.DefaultProcManager(enemy, 12, count_change_callback=enemy.apply_corrosive_armor_strip)
-        self.void_proc_manager = pm.DefaultProcManager(enemy, 13)
+        self.impact_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_IMPACT'])
+        self.puncture_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_PUNCTURE'])
+        self.slash_proc_manager = pm.ContainerizedProcManager(enemy, const.PT_INDEX['PT_SLASH'])
+        self.heat_proc_manager = pm.HeatProcManager(enemy, const.PT_INDEX['PT_HEAT'])
+        self.cold_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_COLD'])
+        self.electric_proc_manager = pm.AOEProcManager(enemy, const.PT_INDEX['PT_ELECTRIC'])
+        self.toxin_proc_manager = pm.ContainerizedProcManager(enemy, const.PT_INDEX['PT_TOXIN'])
+        self.blast_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_BLAST'])
+        self.radiation_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_RADIATION'])
+        self.gas_proc_manager = pm.AOEProcManager(enemy, const.PT_INDEX['PT_GAS'])
+        self.magnetic_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_MAGNETIC'], count_change_callback=enemy.apply_magnetic_debuff)
+        self.viral_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_VIRAL'], count_change_callback=enemy.apply_viral_debuff)
+        self.corrosive_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_CORROSIVE'], count_change_callback=enemy.apply_corrosive_armor_strip)
+        self.void_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_RADIANT'])
 
         self.proc_managers: List[pm.DefaultProcManager] = [self.impact_proc_manager, self.puncture_proc_manager, self.slash_proc_manager,
                                 self.heat_proc_manager, self.cold_proc_manager, self.electric_proc_manager,
@@ -314,27 +364,103 @@ class ProcController():
 class DamageController():
     def __init__(self, enemy: Unit) -> None:
         self.enemy = enemy
-        self.name_controller = {"normal":self.normal, "static_dps":self.static_dps}
+        self.name_controller = {"DC_NORMAL":self.normal, "DC_STATIC_DPS_1":self.static_dps_1, "DC_STATIC_DPS_2":self.static_dps_2}
+        self.name_crit_controller = {"CC_NORMAL":self.crit_controller_0, "CC_1":self.crit_controller_1}
         self.func = self.name_controller[enemy.damage_controller_type]
+        self.cc_func = self.name_crit_controller[enemy.critical_controller_type]
+        self.critical_multiplier = 1
+        self.tiered_critical_multiplier = 1
+        self.unmodified_tiered_critical_multiplier = 1
+        self.critical_tier = 0
+        
 
     def normal(self, fire_mode: FireMode, damage: float):
         return damage
 
-    def static_dps(self, fire_mode: FireMode, damage: float):
+    def static_dps_1(self, fire_mode: FireMode, damage: float):
+        tier_min = (1-1/max(1,self.critical_tier))
+        dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + 1)
+
+        # tier_min_lo = (1-1/max(1,self.critical_tier))
+        # tier_min_hi = (1-1/max(1,self.critical_tier+1))
+        # dps_reducer = (tier_min_lo/(self.critical_multiplier-tier_min_lo) + tier_min_hi/(self.critical_multiplier-tier_min_hi) + 1)
+
+        
+        # dps_multiplier_in = dps_multiplier_in / dps_reducer
+        # tier0_dps = damage_in * dps_multiplier_in
+
         # Weird shotgun mechanic
         dps_multiplier = fire_mode.fireRate.modded * fire_mode.multishot.modded
         dps_multiplier = dps_multiplier/2 if fire_mode.multishot.base > 1 else dps_multiplier
+        dps_multiplier = dps_multiplier / dps_reducer
         tier0_dps = damage * dps_multiplier
 
-        if tier0_dps <= 1000:
-            return damage
-        elif tier0_dps >= 1000 and tier0_dps <= 2500:
-            return ((0.8*tier0_dps+200))/dps_multiplier
+        self.enemy.last_t0_damage = damage
+
+        # if fire_mode.simulation.time < 1:
+        #     print(f"dps:{tier0_dps * self.critical_multiplier:.1f}, 0dps:{tier0_dps:.2f}, 0dmg:{damage:.2f}, dps_mul:{dps_multiplier:.2f}, cm:{self.critical_multiplier:.4f}, {dps_reducer}, {tier_min}")
+
+        dr = 1
+        if tier0_dps >= 1000 and tier0_dps <= 2500:
+            dr = 0.8 + 200/tier0_dps
         elif tier0_dps >= 2500 and tier0_dps <= 5000:
-            return ((0.7*tier0_dps+450))/dps_multiplier
+            dr = 0.7 + 450/tier0_dps
         elif tier0_dps >= 5000 and tier0_dps <= 10000:
-            return ((0.4*tier0_dps+1950))/dps_multiplier
+            dr = 0.4+1950/tier0_dps
         elif tier0_dps >= 10000 and tier0_dps <= 20000:
-            return ((0.2*tier0_dps+3950))/dps_multiplier
+            dr = 0.2+3950/tier0_dps
         elif tier0_dps >= 20000:
-            return ((0.1*tier0_dps+5950))/dps_multiplier
+            dr = 0.1+5950/tier0_dps
+        return damage * dr
+    
+    def static_dps_2(self, fire_mode: FireMode, damage: float):
+        tier_min = (1-1/max(1,self.critical_tier))
+        dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + 1)
+
+        dps_multiplier = fire_mode.fireRate.modded * fire_mode.multishot.modded
+        # Weird shotgun mechanic
+        dps_multiplier = dps_multiplier/2 if fire_mode.multishot.base > 1 else dps_multiplier
+
+        dps_multiplier = dps_multiplier / dps_reducer
+        tier0_dps = damage * dps_multiplier
+
+        self.enemy.last_t0_damage = damage
+
+        # if fire_mode.simulation.time < 1:
+        #     print(f"dps:{tier0_dps * self.critical_multiplier:.1f}, 0dps:{tier0_dps:.2f}, 0dmg:{damage:.2f}, dps_mul:{dps_multiplier:.2f}, cm:{self.critical_multiplier:.4f}, {dps_reducer}, {tier_min}")
+
+        dr = 1
+        if tier0_dps >= 3000 and tier0_dps <= 7500:
+            dr = 0.8 + 600/tier0_dps
+        elif tier0_dps >= 7500 and tier0_dps <= 22500:
+            dr = 1.6/3 + 2600/tier0_dps
+        elif tier0_dps >= 22500:
+            dr = 14600/tier0_dps
+        return damage * dr
+    
+    def crit_controller_0(self, critical_multiplier, critical_tier):
+        self.critical_tier = critical_tier
+        self.critical_multiplier = critical_multiplier
+
+        if critical_tier == 0:
+            self.tiered_critical_multiplier = 1
+            return self.tiered_critical_multiplier
+        
+        self.tiered_critical_multiplier = (critical_multiplier-1)*critical_tier +1
+        self.unmodified_tiered_critical_multiplier = self.tiered_critical_multiplier
+        return self.tiered_critical_multiplier
+    
+    def crit_controller_1(self, critical_multiplier, critical_tier):
+        self.critical_tier = critical_tier
+        self.critical_multiplier = critical_multiplier
+
+        if critical_tier == 0:
+            self.tiered_critical_multiplier = 1
+            return self.tiered_critical_multiplier
+
+        tier_1 = (critical_multiplier-1)*0.5+1
+        tier_increase = tier_1/(1+1/(critical_multiplier-1))
+
+        self.tiered_critical_multiplier = tier_1 + (critical_tier-1) * tier_increase
+        self.unmodified_tiered_critical_multiplier = (critical_multiplier-1)*critical_tier +1
+        return self.tiered_critical_multiplier 
