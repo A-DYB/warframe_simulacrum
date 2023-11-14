@@ -58,7 +58,7 @@ class FireMode():
         self.procAllowances = np.array([1]*20, dtype=float)
 
         self.magazineSize = ModifyParameter( self.data.get("magazineSize", 100) )
-        self.fireRate = Parameter( self.data.get("fireRate", 5) )
+        self.fireRate = Parameter( max(0.1, self.data.get("fireRate", 5)) )
         self.fireTime = Parameter( 1/self.fireRate.modded )
         self.reloadTime = Parameter( self.data.get("reloadTime", 1) )
         self.multishot = Parameter( self.data.get("multishot", 1) )
@@ -67,12 +67,11 @@ class FireMode():
         self.embedDelay = Parameter( self.data.get("embedDelay", 0) )
 
         self.forcedProc = self.data.get("forcedProc", []) # indices corresponding to proc that will be forced
+        self.combine_elemental = []
 
         self.radial = False
         self.unique_proc_count = 0
         self.condition_overloaded = False
-        self.mod_damage_multiplier = 1
-        self.accumulated_damage_multiplier = 1
 
         # mods
         self.damagePerShot_m = {"base":Mod(changed_callbacks=[self.calc_modded_damage]), "additive_base":Mod(changed_callbacks=[self.calc_modded_damage]), 
@@ -174,10 +173,37 @@ class FireMode():
         
 
         # hystrix
-        self.damagePerShot_m["additive_base"].value = 4 # heat, electric
+        # self.damagePerShot_m["additive_base"].value = 4 # heat, electric
+        # self.damagePerShot_m["base"].value = 2.2 + 0.9
 
+        # knell
         self.damagePerShot_m["base"].value = 2.2 + 0.9
+        self.radiation_m["base"].value = 0.9 + 1.65 
+        self.multishot_m["base"].value = 1
+        self.fireRate_m["base"].value = 0.56 + 0.2 - 0.2
+        self.criticalMultiplier_m["additive_final"].value = 1.5
+        self.criticalMultiplier_m["base"].value = 1.1
 
+        
+        # self.corrosive_m["base"].value = 0.9 + 0.9 
+        # self.damagePerShot_m["base"].value = 1.65 +2.2
+        # self.criticalMultiplier_m["additive_final"].value = 1.5
+        # self.criticalMultiplier_m["base"].value = 1.1
+        # self.electric_m["base"].value = 0.9
+
+
+        # lanka
+        # self.damagePerShot_m["base"].value = 1.65 +1.65
+        # self.damagePerShot_m["final_multiplier"].value = 1
+        # self.radiation_m["base"].value = 0.9 + 0.9
+        # self.multishot_m["base"].value = 0
+        # self.fireRate_m["base"].value = 0
+        # self.criticalMultiplier_m["base"].value = 1.2 + 1.62451 + 0.6
+        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
+
+
+        # self.damagePerShot_m["base"].value = 2.2 
+        # self.factionDamage_m["base"].value = 0.55
         pass
 
 
@@ -194,12 +220,10 @@ class FireMode():
                                                     self.criticalChance_m["deadly_munitions"].value + self.criticalChance_m["covenant"].value
 
         # ## Critical Damage
-        # self.criticalMultiplier.modded = ((self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"].value) * \
-        #                                             (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
         self.criticalMultiplier.base = self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"].value
         self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
         self.criticalMultiplier.modded = ((self.criticalMultiplier.base) * \
-                                                    (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
+                                                (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
 
 
         ## Status chance
@@ -239,6 +263,31 @@ class FireMode():
         self.damagePerShot.proportions[11] += self.viral_m["base"].value
         self.damagePerShot.proportions[12] += self.corrosive_m["base"].value
 
+        if 7 in self.combine_elemental:
+            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[4]
+            self.damagePerShot.proportions[3] = 0
+            self.damagePerShot.proportions[4] = 0
+        if 8 in self.combine_elemental:
+            self.damagePerShot.proportions[8] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[5]
+            self.damagePerShot.proportions[3] = 0
+            self.damagePerShot.proportions[5] = 0
+        if 9 in self.combine_elemental:
+            self.damagePerShot.proportions[9] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[6]
+            self.damagePerShot.proportions[3] = 0
+            self.damagePerShot.proportions[6] = 0
+        if 10 in self.combine_elemental:
+            self.damagePerShot.proportions[10] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[5]
+            self.damagePerShot.proportions[4] = 0
+            self.damagePerShot.proportions[5] = 0
+        if 11 in self.combine_elemental:
+            self.damagePerShot.proportions[11] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[6]
+            self.damagePerShot.proportions[4] = 0
+            self.damagePerShot.proportions[6] = 0
+        if 12 in self.combine_elemental:
+            self.damagePerShot.proportions[12] += self.damagePerShot.proportions[5] + self.damagePerShot.proportions[6]
+            self.damagePerShot.proportions[5] = 0
+            self.damagePerShot.proportions[6] = 0
+
         self.procProbabilities = self.damagePerShot.proportions * self.procAllowances
         tot_weight = sum(self.procProbabilities)
         self.procProbabilities *= 1/tot_weight if tot_weight>0 else 0
@@ -258,9 +307,6 @@ class FireMode():
         damage_multiplier = (1 + self.damagePerShot_m["base"].value + direct_damage) * \
                                 self.damagePerShot_m["multishot_multiplier"].value * \
                                     self.damagePerShot_m["final_multiplier"].value
-        
-        self.mod_damage_multiplier = damage_multiplier
-        self.accumulated_damage_multiplier = damage_multiplier
 
         self.damagePerShot.modded = (self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier
         self.totalDamage.modded = self.totalDamage.base_modified * damage_multiplier

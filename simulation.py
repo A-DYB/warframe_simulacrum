@@ -204,8 +204,11 @@ def damage_test(enemy:Unit, weapon:Weapon):
     df = pd.DataFrame([data])
     df.to_csv("./data.csv", mode='a', header=not os.path.isfile("./data.csv"), index=False)
 
+# def func(x, a, b):
+#     return a * x + b
+
 def func(x, a, b):
-    return a * x + b
+    return 460000 * x /(x + b)
 
 def fit(tier=2):
     x = Symbol('x')
@@ -288,6 +291,58 @@ def plot_dps(tier=2):
    
     plt.show()
 
+def plot_dps2():
+    base_dr = 0.8
+    corners = [[0,1500],[1500,3000],[3000,6000],[6000,8000],[8000,10000],\
+               [10000,12000],[12000,14000],[14000,16000],[16000,19000],[19000,22000],\
+               [22000,25500],[25500,28000],[28000,31000]]
+    corners = [[0,460000]]
+    # corners = [[0,3000],[3000,100000]]
+    i1 = [40940,32867,38101,2042,3409,1223,853]
+    o1=[30575,24872,28587,1628,2712,976,681]
+    i2 = [10025,4815,3434,2056,1113,1105,3262,1952,2719,2405,1439,862,2887,1728]
+    o2 = [7883,3820,2731,1639,889,882,2595,1557,2165,1916,1149,688,2298,1378]
+    i3 = [34346,22676,18730,16367,9799,9710,9656,8587]
+    o3 = [25928,17453,14512,12731,7708,7639,7597,6768]
+    i4 = [33885,22372,13395,8472,8938,8472,27203,16289,9752,31367,18777,11243,8558]
+    o4 = [25599,17228,10472,6679,7041,6679,20780,12672,7672,23796,14547,8822,6746]
+    i5=[ 31498,24091,23966,14350,32629,21543,12899,8157,35943,21521,12886,8986]+\
+            [19732,4092,33462,20033,11995,8472,13389,5742,3437,390078]+\
+            [374,303,732,340,277,247,7504,6124,4997,4078,3328]
+    o5=[23890,18498, 18406,11200,24701,16612,10093,6434,27063,16596,10083,7078]+\
+            [15262,3251,25298,15487,9400,6679,10468,4548,2734,185929]+\
+            [299,243,585,272,222,198,5926,4847,3963,3240,2647]
+
+    in_dps = np.array(i1+i2+i3+i4+i5, dtype=float)
+    out_dps = np.array(o1+o2+o3+o4+o5, dtype=float)
+
+    in_dps *= base_dr
+
+    fig,axs = plt.subplots(2,1, sharex=True)
+    axs[0].scatter(in_dps, out_dps)
+    op=0
+    for low,high in corners:
+        out_dps1 = out_dps[(in_dps<high) & (in_dps>low)]
+        in_dps1 = in_dps[(in_dps<high) & (in_dps>low)]
+        if len(out_dps1) <= 1:
+            print('single data point')
+            continue
+        if len(out_dps1) != len(in_dps1):
+            print('improper len')
+            continue
+
+        popt, pcov = curve_fit(func, in_dps1, out_dps1)
+        # print(popt[0]-op, popt[0]/op)
+        op = popt[0]
+        xfit = np.linspace(low, high, 100000)
+        axs[0].plot(xfit, func(xfit, *popt))
+        err = out_dps1 - func(in_dps1, *popt)
+        axs[1].scatter(in_dps1, err)
+
+        print(popt)
+    axs[1].set_ylabel('err')
+    plt.show()
+
 def static_dps1(damage_in, dps_multiplier_in, cm, ct):
 
     tier_min = (1-1/ct)
@@ -365,22 +420,22 @@ def test_theory():
 
     plt.show()
 
-def print_tiers(enemy:Unit, weapon:Weapon):
+def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body'):
     fire_mode = weapon.fire_modes[0]
     for cc in range(6):
         fire_mode.criticalChance.modded = cc
         if fire_mode.trigger == 'HELD':
             fire_mode.damagePerShot_m["multishot_multiplier"].set_value(int(fire_mode.multishot.modded))
-            enemy.pellet_hit(fire_mode)
+            enemy.pellet_hit(fire_mode, bodypart)
             dmg_lo = enemy.last_damage
 
             fire_mode.damagePerShot_m["multishot_multiplier"].set_value(int(fire_mode.multishot.modded)+1)
-            enemy.pellet_hit(fire_mode)
+            enemy.pellet_hit(fire_mode, bodypart)
             dmg_hi = enemy.last_damage
 
             print(f"{tier_name[cc]}: {dmg_lo:.1f}-{dmg_hi:.2f}")
         else:
-            enemy.pellet_hit(fire_mode)
+            enemy.pellet_hit(fire_mode, bodypart)
             print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
 
 def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int):
@@ -400,43 +455,42 @@ def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int):
 
 tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!"}
 simulation = Simulacrum()
-# enemy = Unit("Demolisher Devourer", 75, simulation)
-# enemy.armor.apply_affliction("Full stip", 0)
-# enemy = Unit("Charger Eximus", 80, simulation)
 
-enemy = Unit("Acolyte", 80, simulation)
-enemy.armor.apply_affliction("Full stip", 0)
-enemy.shield.apply_affliction("Full stip", 0)
-
-# weapon = Weapon("Vasto Prime", None, simulation)
-# weapon = Weapon("Quanta Vandal", None, simulation)
-weapon = Weapon("Hystrix", None, simulation)
+# enemy = Unit("Elite Lancer", 145, simulation)
+# enemy.health.apply_affliction("SP", 2.5)
+# base1 = 0.0625
+# base2 = 0.75
+# stren = 1.49
+# tot = base1*stren*base2*stren
+# hp = enemy.health.current_value
+# print(f'{hp*base1*stren:.2f}, {hp*base1*stren*base2*stren:.2f}')
 
 
-# damage_test(enemy, weapon)
-# fit()
+enemy = Unit("Archon", 150, simulation)
+# enemy = Unit("Drekar Manic Bombard", 185, simulation)
+# enemy = Unit("Butcher Eximus", 1850, simulation)
+# enemy.overguard.apply_affliction("SP", 50)
 
-# plot_dps()
-# print_tiers(enemy, weapon)
-print_status_tiers(enemy, weapon, 5)
-# test_theory()
+# enemy = Unit("Narmer Powerfist", 148, simulation)
 
-# enemy = Unit("Charger Eximus", 80, simulation)
-# weapon = Weapon("Synapse", None, simulation)
-# weapon = Weapon("Lex Prime", None, simulation)
-# weapon = Weapon("Vaykor Marelok", None, simulation)
-# weapon = Weapon("Hystrix", None, simulation)
-# weapon = Weapon("Lex", None, simulation)
+enemy.health.apply_affliction("SP", 2.5)
+print(enemy.armor.current_value)
+
+# enemy.armor.apply_affliction("SP", 2.5)
+print(enemy.health.current_value)
 
 
-# run_once(simulation, enemy, weapon)
-# run_reapeated(simulation, enemy, weapon)
+# weapon = Weapon('Lex Prime', None, simulation)
+weapon = Weapon('Knell Prime', None, simulation)
+# print(weapon.fire_modes[0].totalDamage.modded)
+# weapon = Weapon('Lanka', None, simulation)
 
+print_tiers(enemy, weapon, bodypart='head')
+# print_tiers(enemy, weapon, bodypart='body')
 
-# import pstats, cProfile
-# profiler = cProfile.Profile()
-# profiler.enable()
-# simulation.fast_run( [enemy], weapon.fire_modes[0])
-# profiler.disable()
-# stats = pstats.Stats(profiler).sort_stats('tottime')
-# stats.print_stats()
+# plot_dps2()
+
+# for lvl in range(200,10001,100):
+#     enemy = Unit('Thrax Centurion', lvl, simulation)
+#     enemy.health.apply_affliction('',2.5)
+#     print(lvl, f'{enemy.overguard.current_value/enemy.health.current_value:.2f}')

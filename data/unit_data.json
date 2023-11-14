@@ -550,7 +550,7 @@
         "faction": "Grineer",
         "is_eximus": false
     },
-    "Butcher Eximus": {
+    "Butcher Eximus1": {
         "base_health": 237.0,
         "base_armor": 301.0,
         "base_shield": 0.0,
@@ -563,5 +563,48 @@
         "type": "ET_NORMAL",
         "faction": "Grineer",
         "is_eximus": true
+    },
+    "Butcher Eximus": {
+        "base_health": 237.0,
+        "base_armor": 296.0,
+        "base_shield": 0.0,
+        "base_level": 1.0,
+        "base_dr": 1.0,
+        "base_overguard": 12,
+        "health_type": "Cloned Flesh",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "type": "ET_NORMAL",
+        "faction": "Grineer",
+        "is_eximus": true
+    },
+    "Narmer Powerfist": {
+        "base_health": 100.0,
+        "base_armor": 5.0,
+        "base_shield": 0.0,
+        "base_level": 1.0,
+        "base_dr": 1.0,
+        "base_overguard": 0,
+        "health_type": "Cloned Flesh",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "type": "ET_NORMAL",
+        "faction": "Grineer",
+        "is_eximus": false
+    },
+    "Archon": {
+        "base_health": 25000.0,
+        "base_armor": 25,
+        "base_shield": 0.0,
+        "base_level": 1.0,
+        "base_dr": 0.8,
+        "health_type": "Flesh",
+        "armor_type": "Alloy",
+        "shield_type": "None",
+        "type": "ET_NORMAL",
+        "faction": "Infested",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "damage_controller_type": "DC_DYNAMIC_DPS_1"
     }
 }

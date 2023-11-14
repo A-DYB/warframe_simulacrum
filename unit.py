@@ -100,7 +100,7 @@ class Unit:
             fire_mode.calc_modded_damage()
 
         cd = self.get_critical_multiplier(fire_mode, bodypart)
-        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd)
+        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd, bodypart=bodypart)
 
         self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier)
 
@@ -141,13 +141,14 @@ class Unit:
         overguard = self.overguard.current_value
         shield = self.shield.current_value
         health = self.health.current_value
+        
         tot_damage = 0
         if self.overguard.current_value > 0:
             tot_damage = sum(damage * self.overguard.modifier * self.overguard.total_debuff)
             tot_damage = self.damage_controller.func(fire_mode, tot_damage) * critical_multiplier
             self.overguard.current_value -= tot_damage
             if self.overguard.current_value <= 0:
-                self.proc_controller.cold_proc_manager.max_stacks = self.proc_info['DT_COLD']['max_stacks']
+                self.proc_controller.cold_proc_manager.max_stacks = self.proc_info['PT_COLD']['max_stacks']
                 self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 1
         elif self.shield.current_value > 0: # TODO
             if damage[6] > 0:
@@ -182,19 +183,12 @@ class Unit:
             cold_count = self.proc_controller.cold_proc_manager.count
             criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
             base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
-            # self.damage_controller.critical_multiplier = base_critical_multiplier
 
             effective_critical_multiplier = self.damage_controller.cc_func(base_critical_multiplier, critical_tier)
-
-            # effective_critical_multiplier = critical_tier * (base_critical_multiplier - 1) + 1
-            # self.damage_controller.tiered_critical_multiplier = effective_critical_multiplier
             return effective_critical_multiplier
         else:
             effective_critical_multiplier = self.damage_controller.cc_func(1, critical_tier)
             return effective_critical_multiplier
-        
-        # self.damage_controller.tiered_critical_multiplier = 1
-        # return 1
 
     def apply_status(self, fire_mode:FireMode, status_damage: float):
         total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier'].value
@@ -364,7 +358,7 @@ class ProcController():
 class DamageController():
     def __init__(self, enemy: Unit) -> None:
         self.enemy = enemy
-        self.name_controller = {"DC_NORMAL":self.normal, "DC_STATIC_DPS_1":self.static_dps_1, "DC_STATIC_DPS_2":self.static_dps_2}
+        self.name_controller = {"DC_NORMAL":self.normal, "DC_STATIC_DPS_1":self.static_dps_1, "DC_STATIC_DPS_2":self.static_dps_2, "DC_DYNAMIC_DPS_1":self.dynamic_dps_1}
         self.name_crit_controller = {"CC_NORMAL":self.crit_controller_0, "CC_1":self.crit_controller_1}
         self.func = self.name_controller[enemy.damage_controller_type]
         self.cc_func = self.name_crit_controller[enemy.critical_controller_type]
@@ -438,6 +432,20 @@ class DamageController():
             dr = 14600/tier0_dps
         return damage * dr
     
+    def dynamic_dps_1(self, fire_mode: FireMode, damage: float):
+        # tier_min = (1-1/max(1,self.critical_tier))
+        # dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + 1)
+
+        dps_multiplier = fire_mode.multishot.modded
+
+        dps = damage * dps_multiplier * self.tiered_critical_multiplier - 0#300 #- 0.25 * fire_mode.totalDamage.base #- 131.25
+        print(self.tiered_critical_multiplier, damage * dps_multiplier, damage)
+
+        self.enemy.last_t0_damage = damage
+
+        dr = 1/(1+dps/460e3)
+        return damage * dr
+    
     def crit_controller_0(self, critical_multiplier, critical_tier):
         self.critical_tier = critical_tier
         self.critical_multiplier = critical_multiplier
@@ -462,5 +470,5 @@ class DamageController():
         tier_increase = tier_1/(1+1/(critical_multiplier-1))
 
         self.tiered_critical_multiplier = tier_1 + (critical_tier-1) * tier_increase
-        self.unmodified_tiered_critical_multiplier = (critical_multiplier-1)*critical_tier +1
+        self.unmodified_tiered_critical_multiplier = (critical_multiplier-1)*critical_tier + 1
         return self.tiered_critical_multiplier 

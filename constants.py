@@ -53,13 +53,6 @@ PROC_INFO = {"PT_IMPACT": {"name": "Impact", "duration": 6, "max_stacks": 5}, "P
              "PT_TOXIN": {"name": "Toxin","duration": 6,"max_stacks": 50000, "damage_scaling":0.5},"PT_BLAST": {"name": "Blast","duration": 10,"max_stacks": 4},"PT_RADIATION": {"name": "Radiation","duration": 12,"max_stacks": 10},
              "PT_GAS": {"name": "Gas","duration": 6,"max_stacks": 10, "damage_scaling":0.5},"PT_MAGNETIC": {"name": "Magnetic","duration": 6,"max_stacks": 10},"PT_VIRAL": {"name": "Viral","duration": 6,"max_stacks": 10},
              "PT_CORROSIVE": {"name": "Corrosive","duration": 8,"max_stacks": 10},"PT_RADIANT": {"name": "Void","duration": 3,"max_stacks": 1}}
-
-# PROC_INFO = {0:{"name":"Impact", "duration":6, "max_stacks":5}, 1:{"name":"Puncture", "duration":6, "max_stacks":5}, 2:{"name":"Slash", "duration":6, "max_stacks":10000}, 
-#              3:{"name":"Heat", "duration":6, "max_stacks":10000}, 4:{"name":"Cold", "duration":6, "max_stacks":9}, 5:{"name":"Electric", "duration":6, "max_stacks":10000}, 
-#              6:{"name":"Toxin", "duration":6, "max_stacks":10000}, 7:{"name":"Blast", "duration":6, "max_stacks":10}, 8:{"name":"Radiation", "duration":12, "max_stacks":10}, 
-#              9:{"name":"Gas", "duration":6, "max_stacks":10}, 10:{"name":"Magnetic", "duration":6, "max_stacks":10}, 11:{"name":"Viral", "duration":6, "max_stacks":10}, 
-#              12:{"name":"Corrosive", "duration":8, "max_stacks":10}, 13:{"name":"Void", "duration":3, "max_stacks":1}}
-
 modifiers = {
     'Ferrite' :          np.array([1.00, 1.50, 0.85, 1.00, 1.00, 1.00, 1.00, 0.75, 1.00, 1.00, 1.00, 1.00, 1.75, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
     'Alloy' :            np.array([1.00, 1.15, 0.50, 1.00, 1.25, 0.50, 1.00, 1.00, 1.75, 1.00, 0.50, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00]),
