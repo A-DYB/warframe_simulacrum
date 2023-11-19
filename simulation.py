@@ -170,126 +170,69 @@ def run_once(simulation:Simulacrum, enemy:Unit, weapon:Weapon):
     simulation.run_simulation([enemy], weapon.fire_modes[0])
 
 
-
-def damage_test(enemy:Unit, weapon:Weapon):
+def damage_test(enemy:Unit, weapon:Weapon, game_dmg, crit_tier, bodypart='body'):
     fire_mode = weapon.fire_modes[0]
-    # for cc in range(6):
-    #     fire_mode.criticalChance.modded = cc
-    #     enemy.pellet_hit(fire_mode)
-    #     print(f"{tier_name[cc]}: {enemy.last_damage:.1f}")
+    fire_mode.criticalChance.modded = crit_tier
 
-    # frs = [0,0.2,0.4,0.6,0.8,1,1.2,1.32]
-    # fire_mode.criticalChance.modded = 2
-    # ydata = []
-    # xdata = []
-    # for fr in frs:
-    #     tfr = 1+1.2+fr
-    #     fire_mode.fireRate.modded = fire_mode.fireRate.base * tfr
-    #     enemy.pellet_hit(fire_mode)
-    #     print(f"Dmg: {enemy.last_damage:.1f}, ",sep="")
-    #     inp = input()
-    #     xdata.append(fire_mode.fireRate.modded * fire_mode.multishot.modded)
-    #     ydata.append(float(inp)/enemy.last_damage)
-
-    # fit(xdata, ydata)
-    game_dmg = 4661
-    fr = 1 + 0.6 + 0.72 + 0.15 + 0.8
-    fire_mode.criticalChance.modded = 3
-
-
-    fire_mode.fireRate.modded = fire_mode.fireRate.base * fr
-    enemy.pellet_hit(fire_mode)
-    dps_mult=fire_mode.fireRate.modded * fire_mode.multishot.modded
-    data = dict(game_dmg=game_dmg, calc_damage=enemy.last_damage, t0_dmg=enemy.last_t0_damage, dps_mult=dps_mult, cd=enemy.damage_controller.critical_multiplier, ct=enemy.damage_controller.critical_tier )
+    enemy.pellet_hit(fire_mode, bodypart=bodypart)
+    enemy_data = enemy.get_info()
+    weapon_data = fire_mode.get_info()
+    data = dict(game_dmg=game_dmg, calc_damage=enemy.last_damage, t0_dmg=enemy.last_t0_damage, \
+                fire_rate=fire_mode.fireRate.modded, multishot=fire_mode.multishot.modded, \
+                    cd=enemy.damage_controller.critical_multiplier, tiered_cd=enemy.damage_controller.tiered_critical_multiplier, ct=enemy.damage_controller.critical_tier, bodypart=bodypart )
+    data.update(enemy_data)
+    data.update(weapon_data)
     df = pd.DataFrame([data])
-    df.to_csv("./data.csv", mode='a', header=not os.path.isfile("./data.csv"), index=False)
+    df.to_csv("./data1.csv", mode='a', header=not os.path.isfile("./data1.csv"), index=False)
 
-# def func(x, a, b):
-#     return a * x + b
+# def func(x, a, b, c):
+#     return (x)/((x-a)/(460000) + 1)
 
-def func(x, a, b):
-    return 460000 * x /(x + b)
+def func(x, a, b, c):
+    correction_factor = a + x * c/ (1 + x * c/b)
+    return (x)/((x-correction_factor)/(460000) + 1)
 
-def fit(tier=2):
+def plot_dps():
     x = Symbol('x')
 
-    # corners = [8.6594, 10.2184, 17.3188]
-    # corners = [8.6594, 10.2184, 14.2]
-    # corners = [8.6594, 9.43, 14.2]
-    corn = [[8.6594, 10.2184, 14.2], [8.6594, 9.43, 14.2], [8.6594, 9.6, 14.2], [8.6594, 11, 14.2]]
+    df = pd.read_csv("./data1.csv")
+    # df = df[(df.weapon=="Lanka")]
+    # df = df[(df.weapon=="Knell Prime")]
+    # df = df[(df.weapon=="Rubico Prime")]
+    # df = df[(df.weapon=="Rubico Prime")|(df.weapon=="Knell Prime")|(df.weapon=="Rubico")|(df.weapon=="Vectis Prime")]
+    # df = df[(df.weapon=="Rubico")]
+    # df = df[(df.weapon=="Vectis Prime")]
 
-    df = pd.read_csv("./data.csv")
-    # df = df[(df.ct==tier)]
+    df["in_dps"] = df.t0_dmg * df.multishot * df.tiered_cd
+    df["in_dps"] = df.t0_dmg * df.multishot * df.tiered_cd
 
-    # df["ratio"] = df.game_dmg / df.calc_damage
-    df["in_dps"] = df.t0_dmg * df.dps_mult #* df.cd
-    df["out_dps"] = df.game_dmg * df.dps_mult / df.cd
-    df["ratio"] = df.out_dps / df.in_dps
+    df["thry_dps"] = df.calc_damage * df.multishot
+    df["out_dps"] = df.game_dmg * df.multishot 
+    df["ratio"] = df.out_dps / df.in_dps 
+
+    df["diff"] = df.out_dps - df.thry_dps 
 
 
+    fig,axs = plt.subplots(2,1, sharex=True)
+    # axs[0].scatter(df["in_dps"], df["out_dps"])
+    sns.scatterplot(data=df, x='in_dps', y='out_dps', hue='fire_rate', style='multishot', ax=axs[0])
+    # popt, pcov = curve_fit(func, df["in_dps"], df["out_dps"])
+    popt, pcov = curve_fit(lambda x, a, b: func(x, a, b, df.fire_rate), df["in_dps"], df["out_dps"])
+    xfit = np.linspace(0, 3e6, 200000)
+    # axs[0].plot(xfit, func(xfit, *popt))
+    axs[0].plot(xfit, func(xfit, *popt, [1]*len(xfit)))
+    # err = df["out_dps"] - func(df["in_dps"], *popt)
+    # err = df["game_dmg"] - func(df["in_dps"], *popt)/df.multishot
+    err = df["game_dmg"] - func(df["in_dps"], *popt, df.fire_rate)/df.multishot
+    axs[1].scatter(df["in_dps"], err)
 
-    plt.scatter(df.in_dps, df.ratio)
-
-    for cd, corners in list(zip(df.cd.unique(), corn)) :
-        popt1, popt2 = None, None
-        lcorner =6
-        rcorner =0
-        for i, corner in enumerate(corners):
-            if i == 0:
-                rcorner = corner
-            else:
-                lcorner = rcorner
-                rcorner = corner
-
-            dfp = df[(abs(df.cd - cd)<0.01) & (df.dps_mult>lcorner) & (df.dps_mult<rcorner)]
-            if len(dfp.index) <= 1:
-                continue
-
-            # popt, pcov = curve_fit(func, dfp.dps_mult, dfp.ratio)
-            # xfit = np.linspace(lcorner-.2,rcorner+0.2)
-            bdmg = dfp.t0_dmg.iloc[0]
-            popt, pcov = curve_fit(func, dfp.in_dps, dfp.ratio)
-            xfit = np.linspace((lcorner-.2)*bdmg,(rcorner+0.2)*bdmg)
-            plt.plot(xfit, func(xfit, popt[0], popt[1]))
-            print(popt)
-            
-            # popt, pcov = curve_fit(func, xdata[(xdata>lcorner) & (xdata<rcorner)], ydata[(xdata>lcorner) & (xdata<rcorner)])
-            # xfit = np.linspace(min(xdata),max(xdata))
-            # plt.plot(xfit, func(xfit, popt[0], popt[1]))
-
-            if i == 0:
-                popt2 = popt
-            else:
-                popt1 = popt2
-                popt2 = popt
-
-                res = sympy.solve(popt1[0]*x+popt1[1] - (popt2[0]*x+popt2[1]))
-                print(res, res[0]*bdmg)
-        print()
+    print(popt)
+    axs[1].set_ylabel('err')
     plt.show()
-
-def plot_dps(tier=2):
-    x = Symbol('x')
-
-    # corners = [8.6594, 10.2184, 17.3188]
-    # corners = [8.6594, 10.2184, 14.2]
-    # corners = [8.6594, 9.43, 14.2]
-    corn = [[8.6594, 10.2184, 14.2], [8.6594, 9.43, 14.2], [8.6594, 9.6, 14.2]]
-
-    df = pd.read_csv("./data.csv")
-    # df = df[(df.ct==tier)]
-
-
-    df["in_dps"] = df.t0_dmg * df.dps_mult #* df.cd
-    df["out_dps"] = df.game_dmg * df.dps_mult / df.cd
 
     # plt.scatter(df.in_dps, df.out_dps)
-    sns.scatterplot(data=df, x='in_dps', y='out_dps', hue='cd')
-
-
-
-   
-    plt.show()
+    # sns.scatterplot(data=df, x='in_dps', y='diff', hue='weapon', style='multishot')
+    # plt.show()
 
 def plot_dps2():
     base_dr = 0.8
@@ -331,98 +274,29 @@ def plot_dps2():
             print('improper len')
             continue
 
-        popt, pcov = curve_fit(func, in_dps1, out_dps1)
+        # popt, pcov = curve_fit(func, in_dps1, out_dps1)
+        popt, pcov = curve_fit(lambda x, a, b: func(x, a, b, [1]*len(in_dps1)), in_dps1, out_dps1)
+
         # print(popt[0]-op, popt[0]/op)
         op = popt[0]
-        xfit = np.linspace(low, high, 100000)
-        axs[0].plot(xfit, func(xfit, *popt))
-        err = out_dps1 - func(in_dps1, *popt)
+        xfit = np.linspace(low, high, 200000)
+        axs[0].plot(xfit, func(xfit, *popt, [1]*len(xfit)))
+        # err = out_dps1 - func(in_dps1, *popt)
+        err = out_dps1 - func(in_dps1, *popt, [1]*len(in_dps1))
         axs[1].scatter(in_dps1, err)
 
         print(popt)
     axs[1].set_ylabel('err')
     plt.show()
 
-def static_dps1(damage_in, dps_multiplier_in, cm, ct):
 
-    tier_min = (1-1/ct)
-    dps_reducer = (tier_min/(cm-tier_min) + 1)
-
-    dps_multiplier_in = dps_multiplier_in / dps_reducer
-
-    tier0_dps = damage_in * dps_multiplier_in
-
-    if tier0_dps <= 1000:
-        return damage_in
-    elif tier0_dps >= 1000 and tier0_dps <= 2500:
-        return dps_reducer*((0.8*tier0_dps+200))/dps_multiplier_in
-    elif tier0_dps >= 2500 and tier0_dps <= 5000:
-        return dps_reducer*((0.7*tier0_dps+450))/dps_multiplier_in
-    elif tier0_dps >= 5000 and tier0_dps <= 10000:
-        return dps_reducer*((0.4*tier0_dps+1950))/dps_multiplier_in
-    elif tier0_dps >= 10000 and tier0_dps <= 20000:
-        return dps_reducer*((0.2*tier0_dps+3950))/dps_multiplier_in
-    elif tier0_dps >= 20000:
-        return dps_reducer*((0.1*tier0_dps+5950))/dps_multiplier_in
-    
-def static_dps(damage_in, dps_multiplier_in, cm, ct):
-
-    tier_min = (1-1/max(1, ct))
-    dps_reducer = (tier_min/(cm-tier_min) + 1)
-
-    dps_multiplier_in = dps_multiplier_in / dps_reducer
-
-    tier0_dps = damage_in * dps_multiplier_in
-
-    dr=1
-    if tier0_dps >= 1000 and tier0_dps <= 2500:
-        dr = 0.8 + 200/tier0_dps
-    elif tier0_dps >= 2500 and tier0_dps <= 5000:
-        dr = 0.7 + 450/tier0_dps
-    elif tier0_dps >= 5000 and tier0_dps <= 10000:
-        dr = 0.4+1950/tier0_dps
-    elif tier0_dps >= 10000 and tier0_dps <= 20000:
-        dr = 0.2+3950/tier0_dps
-    elif tier0_dps >= 20000:
-        dr = 0.1+5950/tier0_dps
-    return damage_in * dr 
-    
-def static_dps_old(damage_in, dps_multiplier_in, cm, ct):
-    dps_multiplier_in = dps_multiplier_in
-    tier0_dps = damage_in * dps_multiplier_in
-
-    if tier0_dps <= 1000:
-        return damage_in
-    elif tier0_dps >= 1000 and tier0_dps <= 2500:
-        return ((0.8*tier0_dps+200))/dps_multiplier_in
-    elif tier0_dps >= 2500 and tier0_dps <= 5000:
-        return ((0.7*tier0_dps+450))/dps_multiplier_in
-    elif tier0_dps >= 5000 and tier0_dps <= 10000:
-        return ((0.4*tier0_dps+1950))/dps_multiplier_in
-    elif tier0_dps >= 10000 and tier0_dps <= 20000:
-        return ((0.2*tier0_dps+3950))/dps_multiplier_in
-    elif tier0_dps >= 20000:
-        return ((0.1*tier0_dps+5950))/dps_multiplier_in
-    
-def test_theory():
-    x = np.linspace(1, 30000, 1000)
-    y = []
-    for ct in range(0,101):
-        for elem in x:
-            res = static_dps(1, elem, 3.2, ct)
-            old = static_dps_old(1, elem, 3.2, ct)
-            y.append(dict(tier0_dps=elem, out_damage=res, out_old = old, crit_tier=ct))
-    df = pd.DataFrame(y)
-    sns.lineplot(data=df, x='tier0_dps', y='out_damage', hue='crit_tier')
-
-    df['ratio'] = df.out_damage/df.out_old
-    # sns.lineplot(data=df, x='tier0_dps', y='ratio', hue='crit_tier')
-
-    plt.show()
-
-def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body'):
+def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', enemy_afflictions:list=[]):
     fire_mode = weapon.fire_modes[0]
     for cc in range(6):
+        enemy.reset()
+        for func, *args in enemy_afflictions:
+            func(*args)
+        weapon.reset()
         fire_mode.criticalChance.modded = cc
         if fire_mode.trigger == 'HELD':
             fire_mode.damagePerShot_m["multishot_multiplier"].set_value(int(fire_mode.multishot.modded))
@@ -438,59 +312,71 @@ def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body'):
             enemy.pellet_hit(fire_mode, bodypart)
             print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
 
-def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int):
+def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body', enemy_afflictions:list=[]):
     for cc in range(6):
         enemy.reset()
-        enemy.armor.apply_affliction("Full stip", 0)
-        # enemy.shield.apply_affliction("Full stip", 0)
+        for func, *args in enemy_afflictions:
+            func(*args)
         weapon.reset()
         fire_mode = weapon.fire_modes[0]
         fire_mode.forcedProc = [proc_index]
         fire_mode.procProbabilities = np.array([0]*20)
 
         fire_mode.criticalChance.modded = cc
-        enemy.pellet_hit(fire_mode)
+        enemy.pellet_hit(fire_mode, bodypart)
         enemy.proc_controller.proc_managers[proc_index].damage_event(fire_mode)
         print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
+
+def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', crit_tier=2):
+    fire_mode = weapon.fire_modes[0]
+    for i in range(10000):
+        enemy.reset()
+        weapon.reset()
+
+        fire_mode.criticalChance.modded = crit_tier
+
+        enemy.pellet_hit(fire_mode, bodypart)
+        if i==0:
+            ref_dmg = enemy.last_damage
+            continue
+        if ref_dmg != enemy.last_damage:
+            print('Bad damage')
+            break
 
 tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!"}
 simulation = Simulacrum()
 
-# enemy = Unit("Elite Lancer", 145, simulation)
-# enemy.health.apply_affliction("SP", 2.5)
-# base1 = 0.0625
-# base2 = 0.75
-# stren = 1.49
-# tot = base1*stren*base2*stren
-# hp = enemy.health.current_value
-# print(f'{hp*base1*stren:.2f}, {hp*base1*stren*base2*stren:.2f}')
-
-
 enemy = Unit("Archon", 150, simulation)
+# enemy = Unit("Demolisher Devourer", 185, simulation)
+
 # enemy = Unit("Drekar Manic Bombard", 185, simulation)
-# enemy = Unit("Butcher Eximus", 1850, simulation)
+# enemy = Unit("Butcher Eximus", 9999, simulation)
+# enemy = Unit("Gokstad Officer", 9999, simulation)
+# enemy.armor.apply_affliction("SP", 0)
 # enemy.overguard.apply_affliction("SP", 50)
 
-# enemy = Unit("Narmer Powerfist", 148, simulation)
-
-enemy.health.apply_affliction("SP", 2.5)
-print(enemy.armor.current_value)
-
-# enemy.armor.apply_affliction("SP", 2.5)
-print(enemy.health.current_value)
-
-
 # weapon = Weapon('Lex Prime', None, simulation)
-weapon = Weapon('Knell Prime', None, simulation)
-# print(weapon.fire_modes[0].totalDamage.modded)
-# weapon = Weapon('Lanka', None, simulation)
+# weapon = Weapon('Knell Prime', None, simulation)
+weapon = Weapon('Lanka', None, simulation)
+# weapon = Weapon('Rubico Prime', None, simulation)
+# weapon = Weapon('Rubico', None, simulation)
+# weapon = Weapon('Vectis Prime', None, simulation)
 
-print_tiers(enemy, weapon, bodypart='head')
+# print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.armor.apply_affliction, "SP", 0]])
+print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.apply_affliction, "SP", 2.5]])
+print_status_tiers(enemy, weapon, 2, bodypart='head', enemy_afflictions=[[enemy.health.apply_affliction, "SP", 2.5]])
+# damage_test(enemy, weapon, 154548, 2, 'head')
+# damage_test(enemy, weapon, 135344, 1, 'head')
+# damage_test(enemy, weapon, 8689, 0, 'head')
+
+# print()
+# enemy = Unit("Corrupted Heavy Gunner Eximus", 9999, simulation)
+# enemy.overguard.apply_affliction("SP", 0)
+# enemy.armor.apply_affliction("SP", 0)
 # print_tiers(enemy, weapon, bodypart='body')
 
-# plot_dps2()
 
-# for lvl in range(200,10001,100):
-#     enemy = Unit('Thrax Centurion', lvl, simulation)
-#     enemy.health.apply_affliction('',2.5)
-#     print(lvl, f'{enemy.overguard.current_value/enemy.health.current_value:.2f}')
+
+# plot_dps()
+# test_force_tier(enemy, weapon)
+# plot_dps2()

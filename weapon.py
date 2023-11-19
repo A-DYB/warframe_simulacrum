@@ -58,8 +58,8 @@ class FireMode():
         self.procAllowances = np.array([1]*20, dtype=float)
 
         self.magazineSize = ModifyParameter( self.data.get("magazineSize", 100) )
-        self.fireRate = Parameter( max(0.1, self.data.get("fireRate", 5)) )
-        self.fireTime = Parameter( 1/self.fireRate.modded )
+        self.fireRate = Parameter( self.data.get("fireRate", 1) )
+        self.fireTime = Parameter( 20 if self.fireRate.modded == 0 else 1/self.fireRate.modded )
         self.reloadTime = Parameter( self.data.get("reloadTime", 1) )
         self.multishot = Parameter( self.data.get("multishot", 1) )
         self.ammoCost = Parameter( self.data.get("ammoCost", 1) )
@@ -177,12 +177,13 @@ class FireMode():
         # self.damagePerShot_m["base"].value = 2.2 + 0.9
 
         # knell
-        self.damagePerShot_m["base"].value = 2.2 + 0.9
-        self.radiation_m["base"].value = 0.9 + 1.65 
-        self.multishot_m["base"].value = 1
-        self.fireRate_m["base"].value = 0.56 + 0.2 - 0.2
-        self.criticalMultiplier_m["additive_final"].value = 1.5
-        self.criticalMultiplier_m["base"].value = 1.1
+        # self.damagePerShot_m["base"].value = 2.2 + 1.65
+        # self.damagePerShot_m["final_multiplier"].value = 1
+        # self.radiation_m["base"].value = 0.9 + 1.65 
+        # self.multishot_m["base"].value = 1.2
+        # self.fireRate_m["base"].value = 0
+        # self.criticalMultiplier_m["additive_final"].value = 1.5
+        # self.criticalMultiplier_m["base"].value = 1.1
 
         
         # self.corrosive_m["base"].value = 0.9 + 0.9 
@@ -193,14 +194,40 @@ class FireMode():
 
 
         # lanka
-        # self.damagePerShot_m["base"].value = 1.65 +1.65
-        # self.damagePerShot_m["final_multiplier"].value = 1
+        self.damagePerShot_m["base"].value = 1.65 + 1.65
+        self.damagePerShot_m["final_multiplier"].value = 1.5
+        self.radiation_m["base"].value = 0.9 + 0.9
+        self.multishot_m["base"].value = 0.9 
+        self.fireRate_m["base"].value = 0
+        self.criticalMultiplier_m["base"].value = 1.2 #+ 1.62451 
+        self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
+
+        #Rubico Prime
+        # self.damagePerShot_m["base"].value = 1.65- 0.15
+        # self.damagePerShot_m["final_multiplier"].value = 2*2
         # self.radiation_m["base"].value = 0.9 + 0.9
-        # self.multishot_m["base"].value = 0
-        # self.fireRate_m["base"].value = 0
-        # self.criticalMultiplier_m["base"].value = 1.2 + 1.62451 + 0.6
+        # self.multishot_m["base"].value = 0.9
+        # self.fireRate_m["base"].value = 0.9
+        # self.criticalMultiplier_m["base"].value = 1.2 + 0.778832 + 0.5
         # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
 
+        #Rubico
+        # self.damagePerShot_m["base"].value = 1.65
+        # self.damagePerShot_m["final_multiplier"].value = 3
+        # self.radiation_m["base"].value = 0.9 + 0.9
+        # self.multishot_m["base"].value = 0.9
+        # self.fireRate_m["base"].value = 0
+        # self.criticalMultiplier_m["base"].value = 1.2 + 0.5
+        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
+
+        # Vectis Prime
+        # self.damagePerShot_m["base"].value = 1.65 
+        # self.damagePerShot_m["final_multiplier"].value = 2*2 * 1.6
+        # self.radiation_m["base"].value = 0.9 + 0.9
+        # self.multishot_m["base"].value = 0.9
+        # self.fireRate_m["base"].value = 0
+        # self.criticalMultiplier_m["base"].value = 1.2 
+        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
 
         # self.damagePerShot_m["base"].value = 2.2 
         # self.factionDamage_m["base"].value = 0.55
@@ -234,7 +261,7 @@ class FireMode():
         ## Other
         self.multishot.modded = self.multishot.base * (1 + self.multishot_m["base"].value)
         self.fireRate.modded = self.fireRate.base * (1 + self.fireRate_m["base"].value)
-        self.fireTime.modded = 1 / self.fireRate.modded
+        self.fireTime.modded = 20 if self.fireRate.modded==0 else 1 / self.fireRate.modded
         self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"].value)
         self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"].value)
         self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"].value)
@@ -341,6 +368,9 @@ class FireMode():
             next_event = self.simulation.time + max(self.reloadTime.modded, self.fireTime.modded) + self.chargeTime.modded
 
         heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.get_call_index(), EventTrigger(self.pull_trigger, enemy=enemy)))
+
+    def get_info(self):
+        return dict(weapon=self.weapon.name, fire_mode=self.name)
 
 def aid(x):
     # This function returns the memory

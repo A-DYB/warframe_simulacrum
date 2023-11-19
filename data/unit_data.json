@@ -593,11 +593,12 @@
         "is_eximus": false
     },
     "Archon": {
-        "base_health": 25000.0,
+        "base_health": 30000.0,
         "base_armor": 25,
         "base_shield": 0.0,
         "base_level": 1.0,
         "base_dr": 0.8,
+        "health_vulnerability": 1,
         "health_type": "Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
@@ -605,6 +606,24 @@
         "faction": "Infested",
         "base_overguard": 0,
         "is_eximus": false,
-        "damage_controller_type": "DC_DYNAMIC_DPS_1"
+        "damage_controller_type": "DC_DYNAMIC_DPS_1",
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":0.35
+            }
+        }
     }
 }

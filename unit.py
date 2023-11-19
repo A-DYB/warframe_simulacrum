@@ -34,7 +34,10 @@ class Unit:
         self.base_dr = unit_data.get("base_dr", 1)
         self.health_vulnerability = unit_data.get("health_vulnerability", 1)
         self.shield_vulnerability = unit_data.get("shield_vulnerability", 1)
-        self.proc_info = unit_data.get("proc_info", const.PROC_INFO)
+        self.proc_info = const.PROC_INFO.copy()
+        if unit_data['proc_info']:
+            for k,v in unit_data['proc_info'].items():
+                self.proc_info[k] = v
 
         self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
         self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
@@ -102,6 +105,7 @@ class Unit:
         cd = self.get_critical_multiplier(fire_mode, bodypart)
         enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd, bodypart=bodypart)
 
+        print(fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier)
         self.apply_status(fire_mode, fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier)
 
     def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body'):
@@ -214,6 +218,11 @@ class Unit:
     
     def get_stats(self):
         vals = {"overguard":self.overguard.max_value, "shield":self.shield.max_value\
+                     , "health":self.health.max_value, "armor":self.armor.max_value}
+        return vals
+    
+    def get_info(self):
+        vals = {"enemy":self.name, "overguard":self.overguard.max_value, "shield":self.shield.max_value\
                      , "health":self.health.max_value, "armor":self.armor.max_value}
         return vals
     
@@ -375,24 +384,14 @@ class DamageController():
         tier_min = (1-1/max(1,self.critical_tier))
         dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + 1)
 
-        # tier_min_lo = (1-1/max(1,self.critical_tier))
-        # tier_min_hi = (1-1/max(1,self.critical_tier+1))
-        # dps_reducer = (tier_min_lo/(self.critical_multiplier-tier_min_lo) + tier_min_hi/(self.critical_multiplier-tier_min_hi) + 1)
-
-        
-        # dps_multiplier_in = dps_multiplier_in / dps_reducer
-        # tier0_dps = damage_in * dps_multiplier_in
-
         # Weird shotgun mechanic
         dps_multiplier = fire_mode.fireRate.modded * fire_mode.multishot.modded
+        dps_multiplier = 1 if dps_multiplier==0 else dps_multiplier # lanka shenans
         dps_multiplier = dps_multiplier/2 if fire_mode.multishot.base > 1 else dps_multiplier
         dps_multiplier = dps_multiplier / dps_reducer
         tier0_dps = damage * dps_multiplier
 
         self.enemy.last_t0_damage = damage
-
-        # if fire_mode.simulation.time < 1:
-        #     print(f"dps:{tier0_dps * self.critical_multiplier:.1f}, 0dps:{tier0_dps:.2f}, 0dmg:{damage:.2f}, dps_mul:{dps_multiplier:.2f}, cm:{self.critical_multiplier:.4f}, {dps_reducer}, {tier_min}")
 
         dr = 1
         if tier0_dps >= 1000 and tier0_dps <= 2500:
@@ -420,9 +419,6 @@ class DamageController():
 
         self.enemy.last_t0_damage = damage
 
-        # if fire_mode.simulation.time < 1:
-        #     print(f"dps:{tier0_dps * self.critical_multiplier:.1f}, 0dps:{tier0_dps:.2f}, 0dmg:{damage:.2f}, dps_mul:{dps_multiplier:.2f}, cm:{self.critical_multiplier:.4f}, {dps_reducer}, {tier_min}")
-
         dr = 1
         if tier0_dps >= 3000 and tier0_dps <= 7500:
             dr = 0.8 + 600/tier0_dps
@@ -432,18 +428,23 @@ class DamageController():
             dr = 14600/tier0_dps
         return damage * dr
     
-    def dynamic_dps_1(self, fire_mode: FireMode, damage: float):
+    def dynamic_dps_1(self, fire_mode: FireMode, damage: float):#, critical_multiplier:float
         # tier_min = (1-1/max(1,self.critical_tier))
         # dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + 1)
 
-        dps_multiplier = fire_mode.multishot.modded
+        ms_multiplier = fire_mode.multishot.modded
+        dps_multiplier = ms_multiplier * fire_mode.fireRate.modded
 
-        dps = damage * dps_multiplier * self.tiered_critical_multiplier - 0#300 #- 0.25 * fire_mode.totalDamage.base #- 131.25
-        print(self.tiered_critical_multiplier, damage * dps_multiplier, damage)
+        dps = damage * ms_multiplier * self.tiered_critical_multiplier
+
 
         self.enemy.last_t0_damage = damage
+        # print(damage)
 
-        dr = 1/(1+dps/460e3)
+        # print(sum(fire_mode.damagePerShot.modded))
+        correction_factor = 144 + damage * self.tiered_critical_multiplier *  dps_multiplier/ (1 + damage * self.tiered_critical_multiplier * dps_multiplier/20)
+        cap = 460e3 #+ 5800/(self.tiered_critical_multiplier)
+        dr = 1/(1+(dps-correction_factor)/cap)
         return damage * dr
     
     def crit_controller_0(self, critical_multiplier, critical_tier):
