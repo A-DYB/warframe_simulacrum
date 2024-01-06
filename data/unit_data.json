@@ -1,4 +1,71 @@
 {
+    "The Fragmented": {
+        "shield_type": "None",
+        "health_type": "Indifferent Facade",
+        "base_armor": 0,
+        "base_level": 1,
+        "armor_type": "None",
+        "base_shield": 0,
+        "base_health": 50000,
+        "type": "ET_NORMAL",
+        "damage_controller_type": "DC_DYNAMIC_DPS_2",
+        "faction": "The Murmur",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers":{
+            "body":{
+                "multiplier":1,
+                "critical_damage_multiplier":1
+            },
+            "head":{
+                "multiplier":0.999,
+                "critical_damage_multiplier":1
+            },
+            "appendage":{
+                "multiplier":0.666,
+                "critical_damage_multiplier":1
+            },
+            "tail":{
+                "multiplier":0.666,
+                "critical_damage_multiplier":1
+            },
+            "orb":{
+                "multiplier":1,
+                "critical_damage_multiplier":1
+            }
+        },
+        "animation_multipliers":{
+            "normal":{
+                "multiplier":1,
+                "critical_damage_multiplier":1
+            },
+            "slam":{
+                "multiplier":1.25,
+                "critical_damage_multiplier":1
+            },
+            "laser_hands":{
+                "multiplier":1.25,
+                "critical_damage_multiplier":1
+            },
+            "spin":{
+                "multiplier":1.25,
+                "critical_damage_multiplier":1
+            }
+        }
+    },
+    "The Anatomizer": {
+        "shield_type": "None",
+        "health_type": "Indifferent Facade",
+        "base_armor": 0,
+        "base_level": 1,
+        "armor_type": "None",
+        "base_shield": 0,
+        "base_health": 12000,
+        "type": "ET_NORMAL",
+        "faction": "The Murmur",
+        "base_overguard": 0,
+        "is_eximus": false
+    },
     "Gokstad Officer": {
         "shield_type": "None",
         "health_type": "Cloned Flesh",
@@ -368,7 +435,7 @@
             "PT_VIRAL": {
                 "name": "Viral",
                 "duration": 6,
-                "max_stacks": 4
+                "max_stacks": 0
             },
             "PT_CORROSIVE": {
                 "name": "Corrosive",
@@ -597,8 +664,8 @@
         "base_armor": 25,
         "base_shield": 0.0,
         "base_level": 1.0,
-        "base_dr": 0.8,
-        "health_vulnerability": 1,
+        "base_dr": 1,
+        "health_vulnerability": 0.8,
         "health_type": "Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
@@ -622,7 +689,7 @@
                 "name": "Slash",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":0.35
+                "damage_scaling":0.175
             }
         }
     }

@@ -189,6 +189,8 @@ def damage_test(enemy:Unit, weapon:Weapon, game_dmg, crit_tier, bodypart='body')
 #     return (x)/((x-a)/(460000) + 1)
 
 def func(x, a, b, c):
+    a=143
+    b=20
     correction_factor = a + x * c/ (1 + x * c/b)
     return (x)/((x-correction_factor)/(460000) + 1)
 
@@ -290,9 +292,10 @@ def plot_dps2():
     plt.show()
 
 
-def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', enemy_afflictions:list=[]):
+def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', animation='normal', enemy_afflictions:list=[], num_tiers=6):
+    print(f'bodypart:{bodypart}, animation:{animation}')
     fire_mode = weapon.fire_modes[0]
-    for cc in range(6):
+    for cc in range(num_tiers):
         enemy.reset()
         for func, *args in enemy_afflictions:
             func(*args)
@@ -300,19 +303,20 @@ def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', enemy_afflictions:li
         fire_mode.criticalChance.modded = cc
         if fire_mode.trigger == 'HELD':
             fire_mode.damagePerShot_m["multishot_multiplier"].set_value(int(fire_mode.multishot.modded))
-            enemy.pellet_hit(fire_mode, bodypart)
+            enemy.pellet_hit(fire_mode, bodypart, animation)
             dmg_lo = enemy.last_damage
 
             fire_mode.damagePerShot_m["multishot_multiplier"].set_value(int(fire_mode.multishot.modded)+1)
-            enemy.pellet_hit(fire_mode, bodypart)
+            enemy.pellet_hit(fire_mode, bodypart, animation)
             dmg_hi = enemy.last_damage
 
             print(f"{tier_name[cc]}: {dmg_lo:.1f}-{dmg_hi:.2f}")
         else:
-            enemy.pellet_hit(fire_mode, bodypart)
+            enemy.pellet_hit(fire_mode, bodypart, animation)
             print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
+    print()
 
-def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body', enemy_afflictions:list=[]):
+def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body', animation='normal', enemy_afflictions:list=[]):
     for cc in range(6):
         enemy.reset()
         for func, *args in enemy_afflictions:
@@ -323,11 +327,11 @@ def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body
         fire_mode.procProbabilities = np.array([0]*20)
 
         fire_mode.criticalChance.modded = cc
-        enemy.pellet_hit(fire_mode, bodypart)
+        enemy.pellet_hit(fire_mode, bodypart, animation)
         enemy.proc_controller.proc_managers[proc_index].damage_event(fire_mode)
         print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
 
-def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', crit_tier=2):
+def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', animation='normal', crit_tier=2):
     fire_mode = weapon.fire_modes[0]
     for i in range(10000):
         enemy.reset()
@@ -335,7 +339,7 @@ def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', crit_tier=2):
 
         fire_mode.criticalChance.modded = crit_tier
 
-        enemy.pellet_hit(fire_mode, bodypart)
+        enemy.pellet_hit(fire_mode, bodypart, animation)
         if i==0:
             ref_dmg = enemy.last_damage
             continue
@@ -346,37 +350,36 @@ def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', crit_tier=2):
 tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!"}
 simulation = Simulacrum()
 
-enemy = Unit("Archon", 150, simulation)
-# enemy = Unit("Demolisher Devourer", 185, simulation)
-
-# enemy = Unit("Drekar Manic Bombard", 185, simulation)
-# enemy = Unit("Butcher Eximus", 9999, simulation)
-# enemy = Unit("Gokstad Officer", 9999, simulation)
-# enemy.armor.apply_affliction("SP", 0)
-# enemy.overguard.apply_affliction("SP", 50)
-
-# weapon = Weapon('Lex Prime', None, simulation)
-# weapon = Weapon('Knell Prime', None, simulation)
-weapon = Weapon('Lanka', None, simulation)
-# weapon = Weapon('Rubico Prime', None, simulation)
-# weapon = Weapon('Rubico', None, simulation)
-# weapon = Weapon('Vectis Prime', None, simulation)
-
-# print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.armor.apply_affliction, "SP", 0]])
-print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.apply_affliction, "SP", 2.5]])
-print_status_tiers(enemy, weapon, 2, bodypart='head', enemy_afflictions=[[enemy.health.apply_affliction, "SP", 2.5]])
-# damage_test(enemy, weapon, 154548, 2, 'head')
-# damage_test(enemy, weapon, 135344, 1, 'head')
-# damage_test(enemy, weapon, 8689, 0, 'head')
-
-# print()
-# enemy = Unit("Corrupted Heavy Gunner Eximus", 9999, simulation)
-# enemy.overguard.apply_affliction("SP", 0)
-# enemy.armor.apply_affliction("SP", 0)
-# print_tiers(enemy, weapon, bodypart='body')
+# enemy = Unit("Charger Eximus", 225, simulation)
+enemy = Unit("The Fragmented", 225, simulation)
+# enemy = Unit("The Anatomizer", 225, simulation)
+enemy.health.set_value_multiplier(',', 2.5)
 
 
+weapon = Weapon('Dex Pixia Prime', None, simulation)
+fm = weapon.fire_modes[0]
+fm.damagePerShot_m['base'].value = 2.2 - 0.15 + 0.27
+fm.damagePerShot_m['final_multiplier'].value = (1 + 0.55 + 0.9) 
+fm.damagePerShot_m['additive_base'].value = 110
+fm.fireRate_m['base'].value = 0.6 + 0.9 + 0.72 + 0.4 + 1.2 + 0.67
+fm.multishot_m['base'].value = 1
+fm.criticalMultiplier_m['base'].value = 1.1 #+ 0.03125
+# fm.criticalMultiplier_m['additive_final'].value = 0.1
+fm.criticalMultiplier_m['additive_base'].value = 0
+fm.criticalMultiplier_m['final_multiplier'].value = 1.6 #1.6=yellow, 1.65=orange...
+fm.radiation_m['base'].value = 0.6
+fm.factionDamage_m['base'].value = 0.3
+fm.cold_m['base'].value = 0.9
+fm.apply_mods()
 
-# plot_dps()
-# test_force_tier(enemy, weapon)
-# plot_dps2()
+# print_tiers(enemy, weapon, bodypart='appendage', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+# print_tiers(enemy, weapon, bodypart='appendage', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+print_tiers(enemy, weapon, bodypart='body', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+# print_tiers(enemy, weapon, bodypart='body', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+# print_tiers(enemy, weapon, bodypart='head', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+# print_tiers(enemy, weapon, bodypart='head', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+print_tiers(enemy, weapon, bodypart='orb', animation='laser_hands', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=3)
+
+
+
+

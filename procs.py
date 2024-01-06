@@ -422,7 +422,7 @@ class HeatProcManager:
             return 
         
         strip_value = const.HEAT_ARMOR_STRIP[self.strip_index]
-        self.enemy.armor.apply_affliction("Heat armor strip", strip_value)
+        self.enemy.armor.set_value_multiplier("Heat armor strip", strip_value)
 
         if self.strip_index < 4:
             armor_strip_delay = self.base_armor_strip_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
@@ -438,7 +438,7 @@ class HeatProcManager:
             return 
         
         strip_value = const.HEAT_ARMOR_STRIP[self.strip_index]
-        self.enemy.armor.apply_affliction("Heat armor strip", strip_value)
+        self.enemy.armor.set_value_multiplier("Heat armor strip", strip_value)
         if self.strip_index > 0:
             armor_regen_delay = self.base_armor_regen_delay * (1 + fire_mode.statusDuration_m["base"].value)
             heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))

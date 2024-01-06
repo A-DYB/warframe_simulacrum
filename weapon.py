@@ -39,6 +39,9 @@ class Weapon():
 
 class FireMode():
     def __init__(self, weapon:Weapon, name:str) -> None:
+        '''
+        
+        '''
         self.weapon = weapon
         self.name = name
         self.data = weapon.data["fireModes"][self.name]
@@ -107,9 +110,6 @@ class FireMode():
         self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"].value > 0) or (self.damagePerShot_m["condition_overload_multiplier"].value > 0)
         self.fire_mode_effects:List[FireModeEffect] = [FireModeEffect(self, name) for name in self.data.get("secondaryEffects", {})]
 
-        self.load_mods()
-        self.apply_mods()
-
     def reset(self):
         self.attack_index = 1
         self.unique_proc_count = 0
@@ -126,116 +126,7 @@ class FireMode():
         self.chargeTime.reset()
         self.embedDelay.reset()
 
-        self.load_mods()
         self.apply_mods()
-
-    def load_mods(self):
-        # self.damagePerShot_m["direct"].value = 0
-        # self.damagePerShot_m["base"].value = 2.2
-        # self.damagePerShot_m["additive_base"].value = 24
-
-        # self.criticalChance_m["additive_base"].value = 0.3+0.18
-        # self.criticalChance_m["base"].value = 2 + 2.5 + 2
-        # self.criticalMultiplier_m["additive_base"].value = 0.8
-        # self.criticalMultiplier_m["base"].value = 0
-
-        # self.factionDamage_m["base"].value = 0.55
-        # # self.slash_m["base"].value = 1.2
-        # self.heat_m["base"].value = 0.9
-        # self.multishot_m["base"].value = 0.6
-        # self.fireRate_m["base"].value = 0
-
-        # self.damagePerShot_m["additive_base"].value = 24
-
-
-        # self.criticalMultiplier_m["additive_base"].value = 0.8
-        # self.criticalMultiplier_m["base"].value =  1.1
-        # self.damagePerShot_m["additive_base"].value = 24
-        # self.electric_m["base"].value = 1.184
-        # self.slash_m["base"].value = 1.461
-
-
-        # self.damagePerShot_m["base"].value = 2.2 
-        # self.factionDamage_m["base"].value = 0.55
-        # self.heat_m["base"].value = 0.9
-        # self.fireRate_m["base"].value = 0.72
-        # self.multishot_m["base"].value = 1.2
-        # self.corrosive_m["base"].value = 0.9*2
-
-        # self.damagePerShot_m["base"].value = 2.2 + 0.9
-        # self.multishot_m["base"].value = 0.9 + 0.6
-        # self.factionDamage_m["base"].value = 0.55
-
-        # # self.heat_m["base"].value = 0.9
-        # # self.electric_m["base"].value = 0.9
-        # self.radiation_m["base"].value = 0.9 + 0.9
-        # self.fireRate_m["base"].value = 0.45
-        
-
-        # hystrix
-        # self.damagePerShot_m["additive_base"].value = 4 # heat, electric
-        # self.damagePerShot_m["base"].value = 2.2 + 0.9
-
-        # knell
-        # self.damagePerShot_m["base"].value = 2.2 + 1.65
-        # self.damagePerShot_m["final_multiplier"].value = 1
-        # self.radiation_m["base"].value = 0.9 + 1.65 
-        # self.multishot_m["base"].value = 1.2
-        # self.fireRate_m["base"].value = 0
-        # self.criticalMultiplier_m["additive_final"].value = 1.5
-        # self.criticalMultiplier_m["base"].value = 1.1
-
-        
-        # self.corrosive_m["base"].value = 0.9 + 0.9 
-        # self.damagePerShot_m["base"].value = 1.65 +2.2
-        # self.criticalMultiplier_m["additive_final"].value = 1.5
-        # self.criticalMultiplier_m["base"].value = 1.1
-        # self.electric_m["base"].value = 0.9
-
-
-        # lanka
-        self.damagePerShot_m["base"].value = 1.65 + 1.65
-        self.damagePerShot_m["final_multiplier"].value = 1.5
-        self.radiation_m["base"].value = 0.9 + 0.9
-        self.multishot_m["base"].value = 0.9 
-        self.fireRate_m["base"].value = 0
-        self.criticalMultiplier_m["base"].value = 1.2 #+ 1.62451 
-        self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
-
-        #Rubico Prime
-        # self.damagePerShot_m["base"].value = 1.65- 0.15
-        # self.damagePerShot_m["final_multiplier"].value = 2*2
-        # self.radiation_m["base"].value = 0.9 + 0.9
-        # self.multishot_m["base"].value = 0.9
-        # self.fireRate_m["base"].value = 0.9
-        # self.criticalMultiplier_m["base"].value = 1.2 + 0.778832 + 0.5
-        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
-
-        #Rubico
-        # self.damagePerShot_m["base"].value = 1.65
-        # self.damagePerShot_m["final_multiplier"].value = 3
-        # self.radiation_m["base"].value = 0.9 + 0.9
-        # self.multishot_m["base"].value = 0.9
-        # self.fireRate_m["base"].value = 0
-        # self.criticalMultiplier_m["base"].value = 1.2 + 0.5
-        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
-
-        # Vectis Prime
-        # self.damagePerShot_m["base"].value = 1.65 
-        # self.damagePerShot_m["final_multiplier"].value = 2*2 * 1.6
-        # self.radiation_m["base"].value = 0.9 + 0.9
-        # self.multishot_m["base"].value = 0.9
-        # self.fireRate_m["base"].value = 0
-        # self.criticalMultiplier_m["base"].value = 1.2 
-        # self.combine_elemental.append(const.DT_INDEX['DT_RADIATION'])
-
-        # self.damagePerShot_m["base"].value = 2.2 
-        # self.factionDamage_m["base"].value = 0.55
-        pass
-
-
-
-
 
     def apply_mods(self):
         ## Damage
@@ -247,10 +138,11 @@ class FireMode():
                                                     self.criticalChance_m["deadly_munitions"].value + self.criticalChance_m["covenant"].value
 
         # ## Critical Damage
-        self.criticalMultiplier.base = self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"].value
-        self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
-        self.criticalMultiplier.modded = ((self.criticalMultiplier.base) * \
+        base_modified = self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"].value
+        base_modified = round(base_modified * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
+        self.criticalMultiplier.modded = ((base_modified) * \
                                                 (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
+
 
 
         ## Status chance
@@ -261,11 +153,11 @@ class FireMode():
         ## Other
         self.multishot.modded = self.multishot.base * (1 + self.multishot_m["base"].value)
         self.fireRate.modded = self.fireRate.base * (1 + self.fireRate_m["base"].value)
-        self.fireTime.modded = 20 if self.fireRate.modded==0 else 1 / self.fireRate.modded
+        self.fireRate.modded = 0.05 if self.fireRate.modded<0.05 else self.fireRate.modded
+        self.fireTime.modded = 20 if self.fireRate.modded<=0.05 else 1 / self.fireRate.modded
         self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"].value)
         self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"].value)
         self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"].value)
-        self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"].value)
         self.embedDelay.modded = self.embedDelay.base
         self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"].value) * max(0, 1 - self.ammoCost_m["energized_munitions"].value)
 
@@ -469,6 +361,10 @@ class Mod():
         
         for callback in self.changed_callbacks:
             callback()
+
+    def add_callback(self, func):
+        if func not in self.changed_callbacks:
+            self.changed_callbacks.append(func)
 
 
 class EventTrigger():
