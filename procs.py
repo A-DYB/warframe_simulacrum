@@ -93,7 +93,7 @@ class ProcContainer:
         self.simulation = enemy.simulation
         self.index = index
         self.next_event = const.MAX_TIME_OFFSET
-        self.total_damage = np.array([0]*20, dtype=float)
+        self.total_damage = np.array([0]*20, dtype=np.single)
         self.proc_dq: deque[Proc] = deque([])
         self.count = 0
 
@@ -218,7 +218,7 @@ class AOEProcManager:
         self.proc_dq: deque[Proc]= deque([])
         self.init_time: int = const.MAX_TIME_OFFSET
         self.next_tick_event: float = self.init_time
-        self.total_damage: np.array = np.array([0]*20, dtype=float)
+        self.total_damage: np.array = np.array([0]*20, dtype=np.single)
         
         self.total_applied_damage: float = 0
         self.count = 0
@@ -311,7 +311,7 @@ class HeatProcManager:
         self.next_tick_event = const.MAX_TIME_OFFSET
         self.expiry = 0
 
-        self.total_damage = np.array([0]*20, dtype=float)
+        self.total_damage = np.array([0]*20, dtype=np.single)
         self.count = 0
 
         self.simulation = enemy.simulation

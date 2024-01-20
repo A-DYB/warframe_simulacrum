@@ -51,14 +51,14 @@ class FireMode():
 
         self.trigger = self.data.get("trigger", "AUTO")
 
-        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20)), dtype=float) )
+        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20, dtype=np.single)), dtype=np.single) )
         self.totalDamage = Parameter( self.data.get("totalDamage", 1) )
         self.criticalChance = Parameter( self.data.get("criticalChance", 0) )
         self.criticalMultiplier = Parameter( self.data.get("criticalMultiplier", 1) )
         # self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
         self.procChance = Parameter( self.data.get("procChance", 0) )
-        self.procProbabilities = np.array([0]*20, dtype=float)
-        self.procAllowances = np.array([1]*20, dtype=float)
+        self.procProbabilities = np.array([0]*20, dtype=np.single)
+        self.procAllowances = np.array([1]*20, dtype=np.single)
 
         self.magazineSize = ModifyParameter( self.data.get("magazineSize", 100) )
         self.fireRate = Parameter( self.data.get("fireRate", 1) )
@@ -138,12 +138,15 @@ class FireMode():
                                                     self.criticalChance_m["deadly_munitions"].value + self.criticalChance_m["covenant"].value
 
         # ## Critical Damage
-        base_modified = self.criticalMultiplier.base + self.criticalMultiplier_m["additive_base"].value
-        base_modified = round(base_modified * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
-        self.criticalMultiplier.modded = ((base_modified) * \
+         # quantization happens on the base value, not the modded value
+        self.criticalMultiplier.reset()
+        self.criticalMultiplier.base_modified += self.criticalMultiplier_m["additive_base"].value
+        self.criticalMultiplier.base_modified = round(self.criticalMultiplier.base_modified * const.CD_QT) * const.I_CD_QT
+        self.criticalMultiplier.base_modified = np.float32(self.criticalMultiplier.base_modified)
+        print(self.criticalMultiplier.base_modified, type(self.criticalMultiplier.base_modified))
+        self.criticalMultiplier.modded = ((self.criticalMultiplier.base_modified) * \
                                                 (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
-
-
+        self.criticalMultiplier.modded = np.float32(self.criticalMultiplier.modded)
 
         ## Status chance
         self.procChance.modded = (self.procChance.base + self.procChance_m["additive_base"].value) * \
@@ -227,7 +230,7 @@ class FireMode():
                                 self.damagePerShot_m["multishot_multiplier"].value * \
                                     self.damagePerShot_m["final_multiplier"].value
 
-        self.damagePerShot.modded = (self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier
+        self.damagePerShot.modded = ((self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier).astype(np.float32)
         self.totalDamage.modded = self.totalDamage.base_modified * damage_multiplier
 
         for fire_mode_effect in self.fire_mode_effects:
@@ -280,7 +283,7 @@ class FireModeEffect(FireMode):
         self.primary_effect = False
         self.data = fire_mode.data["secondaryEffects"][self.name]
 
-        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20)), dtype=float) )
+        self.damagePerShot = DamageParameter( np.array(self.data.get("damagePerShot", np.array([0]*20, dtype=np.single)), dtype=np.single) )
         self.totalDamage = Parameter( self.data.get("totalDamage", 0) )
         self.criticalChance = self.data.get("criticalChance", fire_mode.criticalChance.base) 
         self.criticalChance = Parameter(self.criticalChance) if not isinstance(self.criticalChance, Parameter) else self.criticalChance
@@ -354,7 +357,7 @@ class Mod():
         self.value = value
         self.changed_callbacks = changed_callbacks
 
-    def set_value(self, value):
+    def set_value(self, value:np.float32, callback:bool=False):
         if self.value == value:
             return
         self.value = value
@@ -380,7 +383,7 @@ def parse_text(text, combine_rule=const.COMBINE_ADD, parse_rule=const.BASE_RULE)
     elif combine_rule == const.COMBINE_MULTIPLY:
         str_list = re.findall(const.BASE_RULE, text)
         if len(str_list)>0:
-            return np.prod(np.array([float(i) for i in str_list]))
+            return np.prod(np.array([float(i) for i in str_list], dtype=np.single))
         else:
             return 1
     return None

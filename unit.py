@@ -22,13 +22,14 @@ class Unit:
         self.simulation = simulation
 
         unit_data = self.get_unit_data()
+        self.ud= unit_data
 
         self.base_level = unit_data.get("base_level", 1)
         self.level = max(self.base_level, self.level)
         self.faction:str = unit_data["faction"]
         self.type: str = unit_data["type"]
         self.is_eximus:bool = unit_data.get("is_eximus", False)
-        self.procImmunities: np.array = np.array([1]*20, dtype=float)
+        self.procImmunities: np.array = np.array([1]*20, dtype=np.single)
         self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
         self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NORMAL")
         self.base_dr = unit_data.get("base_dr", 1)
@@ -61,7 +62,7 @@ class Unit:
 
         self.unique_proc_count = 0
         self.unique_proc_delta = False
-        self.armor_dr = np.array([1]*20, dtype=float)
+        self.armor_dr = np.array([1]*20, dtype=np.single)
         self.set_armor_dr()
 
         self.last_damage = 0
@@ -86,7 +87,7 @@ class Unit:
         
         self.unique_proc_count = 0
         self.unique_proc_delta = False
-        self.armor_dr = np.array([1]*20, dtype=float)
+        self.armor_dr = np.array([1]*20, dtype=np.single)
         self.set_armor_dr()
     
     def set_armor_dr(self):
@@ -171,8 +172,20 @@ class Unit:
             self.shield.current_value -= shield_damage
             tot_damage += shield_damage
         else:
-            tot_damage = sum(damage * self.armor_dr * self.health.modifier * self.health.total_damage_multiplier) * self.health_vulnerability
+            # tot_damage = sum(damage * self.armor_dr * self.health.modifier * self.health.total_damage_multiplier) * self.health_vulnerability
+            # print(tot_damage* critical_multiplier)
+            # tot_damage = self.damage_controller.func(fire_mode, tot_damage, critical_multiplier) * critical_multiplier
+            # self.health.current_value -= tot_damage
+            tot_damage = (damage * self.armor_dr * self.health.modifier * self.health.total_damage_multiplier) * self.health_vulnerability
+            test = tot_damage* critical_multiplier 
+            critical_multiplier = np.float32(critical_multiplier)
+            print(sum(test), test.dtype, tot_damage.dtype, type(critical_multiplier), type(test))
+            print(tot_damage)
+            print(np.float32(sum(tot_damage)))
+            tot_damage = np.float32(sum(tot_damage))
+            
             tot_damage = self.damage_controller.func(fire_mode, tot_damage, critical_multiplier) * critical_multiplier
+            print('her', type(tot_damage))
             self.health.current_value -= tot_damage
 
         self.last_damage = tot_damage
@@ -190,15 +203,14 @@ class Unit:
             bodypart_crit_bonus = 1 if fire_mode.radial else self.bodypart_multipliers[bodypart]['critical_damage_multiplier']
             animation_crit_bonus = 1 if fire_mode.radial else self.animation_multipliers[animation]['critical_damage_multiplier']
 
-
             cold_count = self.proc_controller.cold_proc_manager.count
-            criticalMultiplier_cold = 0 if fire_mode.radial else min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05
-            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value
-
+            criticalMultiplier_cold = 0 if fire_mode.radial else np.float32(min(1, cold_count) * 0.1 + max(0, cold_count-1) * 0.05)
+            base_critical_multiplier = np.float32((fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * fire_mode.criticalMultiplier_m["final_multiplier"].value)
             effective_critical_multiplier = self.damage_controller.cc_func(base_critical_multiplier, critical_tier)
+            print(type(effective_critical_multiplier))
             return effective_critical_multiplier
         else:
-            effective_critical_multiplier = self.damage_controller.cc_func(1, critical_tier)
+            effective_critical_multiplier = self.damage_controller.cc_func(fire_mode.criticalMultiplier.modded, critical_tier)
             return effective_critical_multiplier
 
     def apply_status(self, fire_mode:FireMode, status_damage: float):
@@ -385,6 +397,7 @@ class DamageController():
         
 
     def normal(self, fire_mode: FireMode, damage: float, *args):
+        print('yo', type(damage))
         self.enemy.last_t0_damage = damage
         return damage
 
@@ -442,7 +455,7 @@ class DamageController():
         dps = damage * ms_multiplier * critical_multiplier
         self.enemy.last_t0_damage = damage
 
-        correction_factor = 144 + dps_multiplier/ (1 + dps_multiplier/20)
+        correction_factor = 0
         # print(correction_factor)
         # correction_factor = 164
 
@@ -466,6 +479,7 @@ class DamageController():
         self.critical_tier = critical_tier
         self.critical_multiplier = critical_multiplier
 
+        ## scale critical multiplier to the tier
         if critical_tier == 0:
             self.tiered_critical_multiplier = 1
             return self.tiered_critical_multiplier

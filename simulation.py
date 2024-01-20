@@ -1,5 +1,5 @@
 from weapon import Weapon, FireMode, FireModeEffect, EventTrigger
-from unit import Unit
+from unit import Unit, Protection
 from typing import List, Tuple
 from queue import PriorityQueue
 import seaborn as sns
@@ -12,6 +12,7 @@ from scipy.optimize import curve_fit
 import sympy
 from sympy import Symbol
 import os
+import constants
 
 class Simulacrum:
     def __init__(self) -> None:
@@ -299,6 +300,7 @@ def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', animation='normal', 
         enemy.reset()
         for func, *args in enemy_afflictions:
             func(*args)
+        
         weapon.reset()
         fire_mode.criticalChance.modded = cc
         if fire_mode.trigger == 'HELD':
@@ -313,7 +315,7 @@ def print_tiers(enemy:Unit, weapon:Weapon, bodypart='body', animation='normal', 
             print(f"{tier_name[cc]}: {dmg_lo:.1f}-{dmg_hi:.2f}")
         else:
             enemy.pellet_hit(fire_mode, bodypart, animation)
-            print(f"{tier_name[cc]}: {enemy.last_damage:.2f}")
+            print(f"{tier_name[cc]}: {enemy.last_damage:.3f}")
     print()
 
 def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body', animation='normal', enemy_afflictions:list=[]):
@@ -321,6 +323,7 @@ def print_status_tiers(enemy:Unit, weapon:Weapon, proc_index:int, bodypart='body
         enemy.reset()
         for func, *args in enemy_afflictions:
             func(*args)
+        
         weapon.reset()
         fire_mode = weapon.fire_modes[0]
         fire_mode.forcedProc = [proc_index]
@@ -347,39 +350,224 @@ def test_force_tier(enemy:Unit, weapon:Weapon, bodypart='body', animation='norma
             print('Bad damage')
             break
 
-tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!"}
-simulation = Simulacrum()
+def test_frag():
+    tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!"}
+    simulation = Simulacrum()
 
-# enemy = Unit("Charger Eximus", 225, simulation)
-enemy = Unit("The Fragmented", 225, simulation)
-# enemy = Unit("The Anatomizer", 225, simulation)
-enemy.health.set_value_multiplier(',', 2.5)
-
-
-weapon = Weapon('Dex Pixia Prime', None, simulation)
-fm = weapon.fire_modes[0]
-fm.damagePerShot_m['base'].value = 2.2 - 0.15 + 0.27
-fm.damagePerShot_m['final_multiplier'].value = (1 + 0.55 + 0.9) 
-fm.damagePerShot_m['additive_base'].value = 110
-fm.fireRate_m['base'].value = 0.6 + 0.9 + 0.72 + 0.4 + 1.2 + 0.67
-fm.multishot_m['base'].value = 1
-fm.criticalMultiplier_m['base'].value = 1.1 #+ 0.03125
-# fm.criticalMultiplier_m['additive_final'].value = 0.1
-fm.criticalMultiplier_m['additive_base'].value = 0
-fm.criticalMultiplier_m['final_multiplier'].value = 1.6 #1.6=yellow, 1.65=orange...
-fm.radiation_m['base'].value = 0.6
-fm.factionDamage_m['base'].value = 0.3
-fm.cold_m['base'].value = 0.9
-fm.apply_mods()
-
-# print_tiers(enemy, weapon, bodypart='appendage', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-# print_tiers(enemy, weapon, bodypart='appendage', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-print_tiers(enemy, weapon, bodypart='body', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-# print_tiers(enemy, weapon, bodypart='body', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-# print_tiers(enemy, weapon, bodypart='head', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-# print_tiers(enemy, weapon, bodypart='head', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
-print_tiers(enemy, weapon, bodypart='orb', animation='laser_hands', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=3)
+    # enemy = Unit("Charger Eximus", 225, simulation)
+    enemy = Unit("Archon", 155, simulation)
+    # enemy = Unit("The Anatomizer", 225, simulation)
+    enemy.health.set_value_multiplier(',', 2.5)
 
 
+    weapon = Weapon('Dex Pixia Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = 2.2 - 0.15 + 0.27
+    fm.damagePerShot_m['final_multiplier'].value = (1 + 0.55 + 0.9) 
+    fm.damagePerShot_m['additive_base'].value = 110
+    fm.fireRate_m['base'].value = 0.6 + 0.9 + 0.72 + 0.4 + 1.2 + 0.67
+    fm.multishot_m['base'].value = 1
+    fm.criticalMultiplier_m['base'].value = 1.1 #+ 0.03125
+    # fm.criticalMultiplier_m['additive_final'].value = 0.1
+    fm.criticalMultiplier_m['additive_base'].value = 0
+    fm.criticalMultiplier_m['final_multiplier'].value = 1.6 #1.6=yellow, 1.65=orange...
+    fm.radiation_m['base'].value = 0.6
+    fm.factionDamage_m['base'].value = 0.3
+    fm.cold_m['base'].value = 0.9
+    fm.apply_mods()
 
+    # print_tiers(enemy, weapon, bodypart='appendage', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    # print_tiers(enemy, weapon, bodypart='appendage', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    print_tiers(enemy, weapon, bodypart='body', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    # print_tiers(enemy, weapon, bodypart='body', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    # print_tiers(enemy, weapon, bodypart='head', animation='normal', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    # print_tiers(enemy, weapon, bodypart='head', animation='slam', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=2)
+    print_tiers(enemy, weapon, bodypart='orb', animation='laser_hands', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5]], num_tiers=3)
+
+def test_archon():
+    
+    simulation = Simulacrum()
+
+    enemy = Unit("Archon", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Dex Pixia Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = 2.2 - 0.15 + 0.27
+    fm.damagePerShot_m['final_multiplier'].value = (1 + 0.55 + 0.9) 
+    fm.damagePerShot_m['additive_base'].value = 110
+    fm.fireRate_m['base'].value = 0.6 + 0.9 + 0.72 + 0.4 + 1.2 + 0.67
+    fm.multishot_m['base'].value = 1
+    fm.criticalMultiplier_m['base'].value = 1.1
+    # fm.corrosive_m['base'].value = 1.2
+    fm.radiation_m['base'].value = 0.6
+    fm.cold_m['base'].value = 0.9
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=2)
+
+
+def test_archon2():
+    
+    simulation = Simulacrum()
+
+    enemy = Unit("Archon", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Rubico Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = 1.65
+    fm.damagePerShot_m['final_multiplier'].value = 2.5
+    fm.multishot_m['base'].value = 0.9
+    fm.criticalMultiplier_m['base'].value = 1.2 + 0.6 + 0.5
+    # fm.radiation_m['base'].value = 0.6 + 0.9*2
+    fm.corrosive_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [8]
+    fm.combine_elemental = [12]
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=3)
+
+def test_archon22():
+    
+    simulation = Simulacrum()
+
+    enemy = Unit("Archon", 150, simulation)
+    print(enemy.armor.max_value)
+    print(enemy.health.max_value*2.5*0.5)
+
+
+
+    weapon = Weapon('Rubico Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = 1.65
+    fm.damagePerShot_m['final_multiplier'].value = 2
+    fm.multishot_m['base'].value = 0.9
+    fm.criticalMultiplier_m['base'].value = 1.2 + 0.6 + 0.5
+    # fm.radiation_m['base'].value = 0.6 + 0.9*2
+    fm.corrosive_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [8]
+    fm.combine_elemental = [12]
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=3)
+
+
+def test_archon3():
+    
+    simulation = Simulacrum()
+
+    enemy = Unit("Archon", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Knell Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value =-0.15 + 2.2
+    fm.damagePerShot_m['final_multiplier'].value = 1
+    fm.multishot_m['base'].value = 1
+    fm.criticalMultiplier_m['base'].value = 1.1
+    fm.criticalMultiplier_m['additive_final'].value = 1.5
+    fm.radiation_m['base'].value = 0.6 + 1.65+0.9
+    # fm.corrosive_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [8]
+    # fm.combine_elemental = [12]
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=3)
+
+def test_archon1():
+    
+    simulation = Simulacrum()
+
+    # enemy = Unit("Archon", 150, simulation)
+    enemy = Unit("Butcher", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Lanka', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = np.float32(1.65 + 1.2*3 )
+    fm.damagePerShot_m['final_multiplier'].value = np.float32((1.6 + 0.3) * 3 * 11.15 )# * 7.44
+    fm.multishot_m['base'].value = 0
+    fm.criticalMultiplier_m['base'].value = np.float32(1.2 + 0.6 )
+    # fm.radiation_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [8]
+
+    # fm.corrosive_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [12]
+
+    fm.radiation_m['base'].value = np.float32(0.9*2)
+    fm.cold_m['base'].value = np.float32(1.65)
+    fm.combine_elemental = [constants.DT_INDEX['DT_RADIATION']]
+
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 0]], num_tiers=3)
+
+def test_frag1():
+    
+    simulation = Simulacrum()
+
+    enemy = Unit("The Fragmented", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Vasto Prime', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = 2.2 + 0.27
+    fm.damagePerShot_m['additive_base'].value = 24 + 0
+    fm.criticalMultiplier_m['base'].value = 1.1
+    fm.criticalMultiplier_m['additive_base'].value = 0.8
+    fm.criticalMultiplier_m['additive_final'].value = 4
+    fm.criticalMultiplier_m['final_multiplier'].value = 1
+
+    fm.radiation_m['base'].value = 0.9*2
+
+
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='orb', animation='laser_hands',enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=7)
+    # print_tiers(enemy, weapon, bodypart='body', animation='normal',enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 1]], num_tiers=7)
+
+
+tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!", 6:"Red!!!"}
+# test_frag1()
+# test_archon2()
+test_archon1()
+# test_archon22()
+# test_archon1()
+
+# target = 450.955230712890625
+# target = 450.95522614895765
+# cur_err = 1000
+# res = {'bl':1, 'ba':1, "err":10000}
+# simulation = Simulacrum()
+# enemy = Unit("Archon", 150, simulation)
+# vals, step = np.linspace(0, 451, num=451*100+1,retstep=True)
+# vals = range(1, 451)
+# # print(step)
+# # input()
+# for base_armor in vals:
+#     for base_level in range(1,151):
+#         for mul in np.linspace(1,20, num=20*(20-1)+1):
+#             enemy.base_level = base_level
+#             enemy.armor.base = base_armor
+#             enemy.armor.level_multiplier = enemy.armor.get_level_multiplier()
+#             enemy.armor.reset()
+            
+#             armor = enemy.armor.max_value*mul
+#             err= abs(armor-target)
+#             if err <cur_err:
+#                 cur_err = err
+#                 ba_err = abs(base_armor-(25-1/35))
+#                 res.update({'bl':base_level, 'ba':base_armor, "err":err})
+#                 if err < 0.1:
+#                     print(res, mul)
+                    # print(res)
+            
+        # if err < 0.001:
+        #     print({'bl':base_level, 'ba':base_armor, "err":err})
 

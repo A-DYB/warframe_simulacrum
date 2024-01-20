@@ -53,6 +53,40 @@
             }
         }
     },
+    "Archon": {
+        "base_health": 30000.0,
+        "base_armor": 24.97142857,
+        "base_shield": 0.0,
+        "base_level": 1,
+        "base_dr": 1,
+        "health_vulnerability": 0.8,
+        "health_type": "Flesh",
+        "armor_type": "Alloy",
+        "shield_type": "None",
+        "type": "ET_NORMAL",
+        "faction": "Infested",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "damage_controller_type": "DC_DYNAMIC_DPS_1",
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling":0.175
+            }
+        }
+    },
     "The Anatomizer": {
         "shield_type": "None",
         "health_type": "Indifferent Facade",
@@ -645,6 +679,20 @@
         "faction": "Grineer",
         "is_eximus": true
     },
+    "Butcher": {
+        "base_health": 50.0,
+        "base_armor": 0.0,
+        "base_shield": 0.0,
+        "base_level": 1.0,
+        "base_dr": 1.0,
+        "base_overguard": 0,
+        "health_type": "Cloned Flesh",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "type": "ET_NORMAL",
+        "faction": "Grineer",
+        "is_eximus": false
+    },
     "Narmer Powerfist": {
         "base_health": 100.0,
         "base_armor": 5.0,
@@ -658,39 +706,5 @@
         "type": "ET_NORMAL",
         "faction": "Grineer",
         "is_eximus": false
-    },
-    "Archon": {
-        "base_health": 30000.0,
-        "base_armor": 25,
-        "base_shield": 0.0,
-        "base_level": 1.0,
-        "base_dr": 1,
-        "health_vulnerability": 0.8,
-        "health_type": "Flesh",
-        "armor_type": "Alloy",
-        "shield_type": "None",
-        "type": "ET_NORMAL",
-        "faction": "Infested",
-        "base_overguard": 0,
-        "is_eximus": false,
-        "damage_controller_type": "DC_DYNAMIC_DPS_1",
-        "proc_info": {
-            "PT_IMPACT": {
-                "name": "Impact",
-                "duration": 6,
-                "max_stacks": 3
-            },
-            "PT_PUNCTURE": {
-                "name": "Puncture",
-                "duration": 6,
-                "max_stacks": 3
-            },
-            "PT_SLASH": {
-                "name": "Slash",
-                "duration": 6,
-                "max_stacks": 4,
-                "damage_scaling":0.175
-            }
-        }
     }
 }
