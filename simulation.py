@@ -537,6 +537,7 @@ tier_name = {0:"White", 1:"Yellow", 2:"Orange", 3:"Red", 4:"Red!", 5:"Red!!", 6:
 # test_frag1()
 # test_archon2()
 test_archon1()
+y=1233
 # test_archon22()
 # test_archon1()
 
