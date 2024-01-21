@@ -140,13 +140,16 @@ class FireMode():
         # ## Critical Damage
          # quantization happens on the base value, not the modded value
         self.criticalMultiplier.reset()
-        self.criticalMultiplier.base_modified += self.criticalMultiplier_m["additive_base"].value
-        self.criticalMultiplier.base_modified = round(self.criticalMultiplier.base_modified * const.CD_QT) * const.I_CD_QT
-        self.criticalMultiplier.base_modified = np.float32(self.criticalMultiplier.base_modified)
-        print(self.criticalMultiplier.base_modified, type(self.criticalMultiplier.base_modified))
-        self.criticalMultiplier.modded = ((self.criticalMultiplier.base_modified) * \
-                                                (1 + self.criticalMultiplier_m["base"].value) + self.criticalMultiplier_m["additive_final"].value )
-        self.criticalMultiplier.modded = np.float32(self.criticalMultiplier.modded)
+        cdef float cm_base_modified = self.criticalMultiplier.base_modified
+        cdef float cm_modded = 1
+
+        cm_base_modified += self.criticalMultiplier_m["additive_base"].value
+        cm_base_modified = round(cm_base_modified  * const.CD_QT)  * const.I_CD_QT
+
+        self.criticalMultiplier.base_modified = cm_base_modified
+        cm_modded = ((self.criticalMultiplier.base_modified) * \
+                                                (<float>1 + <float>self.criticalMultiplier_m["base"].value) + <float>self.criticalMultiplier_m["additive_final"].value )
+        self.criticalMultiplier.modded = cm_modded
 
         ## Status chance
         self.procChance.modded = (self.procChance.base + self.procChance_m["additive_base"].value) * \
@@ -154,10 +157,10 @@ class FireMode():
                                         self.procChance_m["final_multiplier"].value * self.procChance_m["multishot_multiplier"].value
 
         ## Other
-        self.multishot.modded = self.multishot.base * (1 + self.multishot_m["base"].value)
-        self.fireRate.modded = self.fireRate.base * (1 + self.fireRate_m["base"].value)
-        self.fireRate.modded = 0.05 if self.fireRate.modded<0.05 else self.fireRate.modded
-        self.fireTime.modded = 20 if self.fireRate.modded<=0.05 else 1 / self.fireRate.modded
+        self.multishot.modded = <float>self.multishot.base * (<float>1 + <float>self.multishot_m["base"].value)
+        self.fireRate.modded = <float>self.fireRate.base * (<float>1 + <float>self.fireRate_m["base"].value)
+        self.fireRate.modded = self.fireRate.modded
+        self.fireTime.modded = <float>20 if self.fireRate.modded<=0.05 else <float>(1 / self.fireRate.modded)
         self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"].value)
         self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"].value)
         self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"].value)
@@ -169,24 +172,24 @@ class FireMode():
 
     def calc_full_damage_stack(self):
         np.copyto( self.damagePerShot.proportions, self.damagePerShot.base_proportions )
-        self.damagePerShot.proportions[0] *= (1 + self.impact_m["base"].value)
-        self.damagePerShot.proportions[1] *= (1 + self.puncture_m["base"].value)
-        self.damagePerShot.proportions[2] *= (1 + self.slash_m["base"].value)
+        self.damagePerShot.proportions[0] *= (<float>1 + <float>self.impact_m["base"].value)
+        self.damagePerShot.proportions[1] *= (<float>1 + <float>self.puncture_m["base"].value)
+        self.damagePerShot.proportions[2] *= (<float>1 + <float>self.slash_m["base"].value)
 
-        self.damagePerShot.proportions[3] += self.heat_m["base"].value
-        self.damagePerShot.proportions[4] += self.cold_m["base"].value
-        self.damagePerShot.proportions[5] += self.electric_m["base"].value
-        self.damagePerShot.proportions[6] += self.toxin_m["base"].value
+        self.damagePerShot.proportions[3] += <float>self.heat_m["base"].value
+        self.damagePerShot.proportions[4] += <float>self.cold_m["base"].value
+        self.damagePerShot.proportions[5] += <float>self.electric_m["base"].value
+        self.damagePerShot.proportions[6] += <float>self.toxin_m["base"].value
 
-        self.damagePerShot.proportions[7] += self.blast_m["base"].value
-        self.damagePerShot.proportions[8] += self.radiation_m["base"].value
-        self.damagePerShot.proportions[9] += self.gas_m["base"].value
-        self.damagePerShot.proportions[10] += self.magnetic_m["base"].value
-        self.damagePerShot.proportions[11] += self.viral_m["base"].value
-        self.damagePerShot.proportions[12] += self.corrosive_m["base"].value
+        self.damagePerShot.proportions[7] += <float>self.blast_m["base"].value
+        self.damagePerShot.proportions[8] += <float>self.radiation_m["base"].value
+        self.damagePerShot.proportions[9] += <float>self.gas_m["base"].value
+        self.damagePerShot.proportions[10] += <float>self.magnetic_m["base"].value
+        self.damagePerShot.proportions[11] += <float>self.viral_m["base"].value
+        self.damagePerShot.proportions[12] += <float>self.corrosive_m["base"].value
 
         if 7 in self.combine_elemental:
-            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[4]
+            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + <float>self.damagePerShot.proportions[4]
             self.damagePerShot.proportions[3] = 0
             self.damagePerShot.proportions[4] = 0
         if 8 in self.combine_elemental:
@@ -214,7 +217,7 @@ class FireMode():
         tot_weight = sum(self.procProbabilities)
         self.procProbabilities *= 1/tot_weight if tot_weight>0 else 0
 
-        self.damagePerShot.quantized = np.round(self.damagePerShot.proportions * 16)/16
+        self.damagePerShot.quantized = np.round(self.damagePerShot.proportions * <float>16)/<float>16
 
         self.calc_modded_damage()
 
@@ -222,15 +225,15 @@ class FireMode():
             fire_mode_effect.calc_full_damage_stack()
 
     def calc_modded_damage(self):
-        self.damagePerShot.set_base_total(self.totalDamage.base + self.damagePerShot_m["additive_base"].value)
+        self.damagePerShot.set_base_total(self.totalDamage.base + <float>self.damagePerShot_m["additive_base"].value)
         self.totalDamage.base_modified = self.damagePerShot.base_total
 
-        direct_damage = 0 if self.radial else self.unique_proc_count * (self.damagePerShot_m["condition_overload_base"].value + self.damagePerShot_m["direct"].value)
-        damage_multiplier = (1 + self.damagePerShot_m["base"].value + direct_damage) * \
-                                self.damagePerShot_m["multishot_multiplier"].value * \
-                                    self.damagePerShot_m["final_multiplier"].value
+        cdef float direct_damage = <float>0 if self.radial else <float>self.unique_proc_count * (<float>self.damagePerShot_m["condition_overload_base"].value + <float>self.damagePerShot_m["direct"].value)
+        cdef float damage_multiplier = (<float>1 + <float>self.damagePerShot_m["base"].value + direct_damage) * \
+                                <float>self.damagePerShot_m["multishot_multiplier"].value * \
+                                    <float>self.damagePerShot_m["final_multiplier"].value
 
-        self.damagePerShot.modded = ((self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier).astype(np.float32)
+        self.damagePerShot.modded = ((self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier).astype(np.single)
         self.totalDamage.modded = self.totalDamage.base_modified * damage_multiplier
 
         for fire_mode_effect in self.fire_mode_effects:
@@ -245,7 +248,7 @@ class FireMode():
         if self.trigger == "HELD":
             self.damagePerShot_m["multishot_multiplier"].set_value(multishot_roll)
             self.procChance_m["multishot_multiplier"].set_value(multishot_roll)
-            multishot = 1
+            multishot = <float>1
 
         for _ in range(multishot):
             fm_time = self.simulation.time + self.embedDelay.modded
@@ -289,12 +292,12 @@ class FireModeEffect(FireMode):
         self.criticalChance = Parameter(self.criticalChance) if not isinstance(self.criticalChance, Parameter) else self.criticalChance
         self.criticalMultiplier = self.data.get("criticalMultiplier", fire_mode.criticalMultiplier.base) 
         self.criticalMultiplier = Parameter(self.criticalMultiplier) if not isinstance(self.criticalMultiplier, Parameter) else self.criticalMultiplier
-        self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
+
         self.procChance = self.data.get("procChance", fire_mode.procChance)
         self.procChance = Parameter(self.procChance) if not isinstance(self.procChance, Parameter) else self.procChance
 
-        self.multishot = Parameter( self.data.get("multishot", 1) )
-        self.embedDelay = Parameter( self.data.get("embedDelay", 0) )
+        self.multishot = Parameter( self.data.get("multishot", <float>1) )
+        self.embedDelay = Parameter( self.data.get("embedDelay", <float>0) )
         self.forcedProc = self.data.get("forcedProc", [])
 
         self.fire_mode_effects:List[FireModeEffect] = []
@@ -305,35 +308,36 @@ class FireModeEffect(FireMode):
 
 class DamageParameter():
     def __init__(self, base: np.array) -> None:
-        self.base = base
+        self.base = base.astype(np.single)
         self.base_modified = base
-        self.base_total: int = sum(self.base_modified)
-        self.base_proportions = self.base_modified/self.base_total
+        self.base_total = <float>np.sum(self.base_modified)
+        self.base_proportions = (self.base_modified/self.base_total).astype(np.single)
         self.proportions = self.base_proportions.copy()
         self.quantized = self.base_modified.copy()
         self.modded = self.base_modified.copy()
 
     def reset(self):
         self.base_modified = self.base
-        self.base_total: int = sum(self.base_modified)
-        self.base_proportions = self.base_modified/self.base_total
+        self.base_total = <float>np.sum(self.base_modified)
+        self.base_proportions = (self.base_modified/self.base_total).astype(np.single)
         self.proportions = self.base_proportions.copy()
         self.modded = self.base_modified.copy()
         self.quantized = self.base_modified.copy()
 
     def set_base_total(self, value):
-        if value == self.base_total:
+        cdef float new_base_total = value
+        if new_base_total == self.base_total:
             return
         
-        self.base_modified = self.base_proportions * value
-        self.base_total = value
+        self.base_modified = self.base_proportions * new_base_total
+        self.base_total = new_base_total
 
 
 class ModifyParameter():
     def __init__(self, base) -> None:
-        self.base = base
-        self.modded = base
-        self.current = base
+        self.base = <float>base
+        self.modded = <float>base
+        self.current = <float>base
 
     def reset(self):
         self.modded = self.base
@@ -342,9 +346,9 @@ class ModifyParameter():
 
 class Parameter():
     def __init__(self, base) -> None:
-        self.base = base
-        self.base_modified = base
-        self.modded = base
+        self.base = <float>base
+        self.base_modified = <float>base
+        self.modded = <float>base
 
     def reset(self):
         self.base_modified = self.base
@@ -352,16 +356,14 @@ class Parameter():
 
 
 class Mod():
-    def __init__(self, key='', value=0, changed_callbacks=[]) -> None:
+    def __init__(self, key='', value=<float>0, changed_callbacks=[]) -> None:
         self.key = key
-        self.value = value
+        self.value = <float>value
         self.changed_callbacks = changed_callbacks
 
-    def set_value(self, value:np.float32, callback:bool=False):
-        if self.value == value:
-            return
-        self.value = value
-        
+    def set_value(self, value, callback:bool=False):
+        self.value = <float>value
+
         for callback in self.changed_callbacks:
             callback()
 

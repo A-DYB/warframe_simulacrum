@@ -507,6 +507,36 @@ def test_archon1():
 
     print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 0]], num_tiers=3)
 
+def test_archon_acrid():
+    
+    simulation = Simulacrum()
+
+    # enemy = Unit("Archon", 150, simulation)
+    enemy = Unit("Butcher", 150, simulation)
+    print(enemy.armor.max_value)
+
+
+    weapon = Weapon('Lanka', None, simulation)
+    fm = weapon.fire_modes[0]
+    fm.damagePerShot_m['base'].value = np.float32(1.65 + 1.2*3 )
+    fm.damagePerShot_m['final_multiplier'].value = np.float32((1.6 + 0.3) * 3 * 11.15 )# * 7.44
+    fm.multishot_m['base'].value = 0
+    fm.criticalMultiplier_m['base'].value = np.float32(1.2 + 0.6 )
+    # fm.radiation_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [8]
+
+    # fm.corrosive_m['base'].value = 0.6 + 0.9*2
+    # fm.combine_elemental = [12]
+
+    fm.radiation_m['base'].value = np.float32(0.9*2)
+    fm.cold_m['base'].value = np.float32(1.65)
+    fm.combine_elemental = [constants.DT_INDEX['DT_RADIATION']]
+
+    fm.apply_mods()
+
+    print_tiers(enemy, weapon, bodypart='head', enemy_afflictions=[[enemy.health.set_value_multiplier, "SP", 2.5],[enemy.armor.set_value_multiplier, "SP", 0]], num_tiers=3)
+
+
 def test_frag1():
     
     simulation = Simulacrum()
