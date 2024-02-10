@@ -55,7 +55,7 @@
     },
     "Archon": {
         "base_health": 30000.0,
-        "base_armor": 24.97142857,
+        "base_armor": 25,
         "base_shield": 0.0,
         "base_level": 1,
         "base_dr": 1,

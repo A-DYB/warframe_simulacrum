@@ -44,7 +44,7 @@ class DefaultProcManager():
         self.count = 0
 
     def add_proc(self, fire_mode: FireMode, damage: float):
-        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"].value)
+        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
         new_proc = Proc(self.enemy, fire_mode, duration, damage)
         delta = True
 
@@ -172,11 +172,11 @@ class ContainerizedProcManager:
         self.count = 0
 
     def add_proc(self, fire_mode:FireMode, damage:float):
-        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"].value)
+        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
         if self.proc_id == const.DT_INDEX["DT_SLASH"]:
             damage = self.damage_scaling * damage 
         elif self.proc_id == const.DT_INDEX["DT_TOXIN"]:
-            damage = self.damage_scaling * damage  * (1 + fire_mode.toxin_m["base"].value)
+            damage = self.damage_scaling * damage  * (1 + fire_mode.toxin_m["base"])
         else:
             damage = damage 
         
@@ -233,7 +233,7 @@ class AOEProcManager:
         self.count = 0
 
     def add_proc(self, fire_mode:FireMode, damage: float):
-        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"].value)
+        duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
         min_dmg = 0
         if self.count == 0:
             min_dmg = 0
@@ -252,7 +252,7 @@ class AOEProcManager:
                 self.count -= 1
 
         if self.proc_id == const.DT_INDEX["DT_ELECTRIC"]:
-            damage = min_dmg + self.damage_scaling * damage  * (1 + fire_mode.electric_m["base"].value)
+            damage = min_dmg + self.damage_scaling * damage  * (1 + fire_mode.electric_m["base"])
         elif self.proc_id == const.DT_INDEX["DT_GAS"]:
             damage = min_dmg + self.damage_scaling * damage 
         else:
@@ -345,27 +345,27 @@ class HeatProcManager:
             self.init_time = self.simulation.time
             self.next_tick_event = self.init_time + 1
             
-            duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"].value)
+            duration = self.base_duration * (1 + fire_mode.statusDuration_m["base"])
             expiry = self.simulation.time + duration
-            damage = self.damage_scaling * damage  * (1 + fire_mode.heat_m["base"].value)
+            damage = self.damage_scaling * damage  * (1 + fire_mode.heat_m["base"])
 
-            armor_strip_delay = self.base_armor_strip_delay * (1 + fire_mode.statusDuration_m["base"].value)
+            armor_strip_delay = self.base_armor_strip_delay * (1 + fire_mode.statusDuration_m["base"])
             # schedule heat strip
             heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.get_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode)))
             heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
             heapq.heappush(self.simulation.event_queue, (expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
             self.enemy.unique_proc_count += 1
         elif self.count >= self.max_stacks:
-            damage = self.damage_scaling * damage * (1 + self.proc_dq[0].fire_mode.heat_m["base"].value)
-            duration = self.base_duration * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
+            damage = self.damage_scaling * damage * (1 + self.proc_dq[0].fire_mode.heat_m["base"])
+            duration = self.base_duration * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
             # remove oldest proc
             while self.count >= self.max_stacks:
                 old_proc = self.proc_dq.popleft()
                 self.total_damage[const.PROCID_DAMAGETYPE[self.proc_id]] -= old_proc.damage
                 self.count -= 1
         else:
-            damage = self.damage_scaling * damage * (1 + self.proc_dq[0].fire_mode.heat_m["base"].value)
-            duration = self.base_duration * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
+            damage = self.damage_scaling * damage * (1 + self.proc_dq[0].fire_mode.heat_m["base"])
+            duration = self.base_duration * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
     
         new_proc = Proc(self.enemy, fire_mode, duration, damage)
         if self.refresh:
@@ -390,7 +390,7 @@ class HeatProcManager:
             return
         if self.refresh:
             if self.expiry <= self.simulation.time:
-                armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
+                armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
                 # before reset, pass the fire_mode from the original proc so the status duration is preserved
                 heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
                 self.count = 0
@@ -407,7 +407,7 @@ class HeatProcManager:
                     # schedule next expiry
                     heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
                 else:
-                    armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
+                    armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
                     # before reset, pass the fire_mode from the original proc so the status duration is preserved
                     heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
                     self.count = 0
@@ -425,7 +425,7 @@ class HeatProcManager:
         self.enemy.armor.set_value_multiplier("Heat armor strip", strip_value)
 
         if self.strip_index < 4:
-            armor_strip_delay = self.base_armor_strip_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"].value)
+            armor_strip_delay = self.base_armor_strip_delay * (1 + self.proc_dq[0].fire_mode.statusDuration_m["base"])
             heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.get_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode)))
 
     def armor_regen_event(self, fire_mode: FireMode):
@@ -440,7 +440,7 @@ class HeatProcManager:
         strip_value = const.HEAT_ARMOR_STRIP[self.strip_index]
         self.enemy.armor.set_value_multiplier("Heat armor strip", strip_value)
         if self.strip_index > 0:
-            armor_regen_delay = self.base_armor_regen_delay * (1 + fire_mode.statusDuration_m["base"].value)
+            armor_regen_delay = self.base_armor_regen_delay * (1 + fire_mode.statusDuration_m["base"])
             heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
 
     def get_damage_info(self):

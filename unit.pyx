@@ -92,17 +92,16 @@ class Unit:
     
     def set_armor_dr(self):
         cdef int current_armor = self.armor.current_value
-        # current_armor = 267
-        # print(current_armor)
-        if int(current_armor) >= 1:
-            np.reciprocal((self.armor.modifier*(-1)+2)*(current_armor * const.ARMOR_RATIO)+1, out=self.armor_dr)
+
+        if current_armor >= 1:
+            np.reciprocal((self.armor.modifier*(<float>-1) + <float>2)*(current_armor * const.ARMOR_RATIO)+1, out=self.armor_dr)
             np.multiply(self.armor.modifier, self.armor_dr, out=self.armor_dr)
-            self.armor_dr[const.DT_INDEX["DT_FINISHER"]] = 1
-            self.armor_dr[const.DT_INDEX["DT_CINEMATIC"]] = 1
-            self.armor_dr[const.DT_INDEX["DT_HEALTH_DRAIN"]] = 1
+            self.armor_dr[const.DT_INDEX["DT_FINISHER"]] = <float>1
+            self.armor_dr[const.DT_INDEX["DT_CINEMATIC"]] = <float>1
+            self.armor_dr[const.DT_INDEX["DT_HEALTH_DRAIN"]] = <float>1
         else:
-            self.armor_dr *= 0
-            self.armor_dr += 1
+            self.armor_dr *= <float>0
+            self.armor_dr += <float>1
             
 
     def pellet_hit(self, fire_mode:FireMode, bodypart='body', animation='normal'):
@@ -123,9 +122,10 @@ class Unit:
         # body part bonuses
         multiplier *= (<float>self.bodypart_multipliers[bodypart]['multiplier'] * <float>self.animation_multipliers[animation]['multiplier'] )
         multiplier *= self.base_dr
+        multiplier *= <float>fire_mode.damagePerShot_m["multishot_multiplier"]
 
         # # faction bonuses
-        cdef float faction_bonus = (1 + <float>fire_mode.factionDamage_m["base"].value)
+        cdef float faction_bonus = (1 + <float>fire_mode.factionDamage_m["base"])
         multiplier *= faction_bonus
 
         og, sg, hg = self.remove_protection(fire_mode, damage * multiplier, critical_multiplier)
@@ -166,6 +166,7 @@ class Unit:
             if self.overguard.current_value <= 0:
                 self.proc_controller.cold_proc_manager.max_stacks = self.proc_info['PT_COLD']['max_stacks']
                 self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 1
+            accumulated_applied_damage += applied_damage
         elif self.shield.current_value > 0: # TODO
             if damage[6] > 0:
                 health_damage = damage[6] * self.armor_dr[6] * self.health.modifier[6] * self.health.total_damage_multiplier * self.health_vulnerability
@@ -182,7 +183,7 @@ class Unit:
         else:
             health_damage = damage * self.armor_dr * self.health.modifier * self.health.total_damage_multiplier * self.health_vulnerability
             dr = self.damage_controller.func(fire_mode, health_damage, critical_multiplier)
-            applied_damage = np.sum(health_damage * dr  ) * critical_multiplier
+            applied_damage = np.sum(health_damage * dr * critical_multiplier) 
             accumulated_applied_damage += applied_damage
             self.health.current_value -= applied_damage
 
@@ -209,7 +210,7 @@ class Unit:
 
             cold_count = self.proc_controller.cold_proc_manager.count
             criticalMultiplier_cold = 0 if fire_mode.radial else <float>min(1, cold_count) * <float>0.1 + <float>max(0, cold_count-1) * <float>0.05
-            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * <float>fire_mode.criticalMultiplier_m["final_multiplier"].value
+            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * <float>fire_mode.criticalMultiplier_m["final_multiplier"]
             effective_critical_multiplier = self.damage_controller.cc_func(base_critical_multiplier, critical_tier)
             return effective_critical_multiplier
         else:
@@ -217,7 +218,7 @@ class Unit:
             return effective_critical_multiplier
 
     def apply_status(self, fire_mode:FireMode, status_damage: float):
-        total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier'].value
+        total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier']
         status_tier = int(total_status_chance) + int(random() < (total_status_chance) % 1)
 
         for _ in range(status_tier):
@@ -454,11 +455,13 @@ class DamageController():
         return dr
     
     def dynamic_dps_1(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
-        cdef float dpt = np.sum(damage * <float>fire_mode.multishot.modded * critical_multiplier)
+        cdef float dpt = np.sum(damage) * critical_multiplier * <float>fire_mode.multishot.modded
         self.enemy.last_t0_damage = np.sum(damage)
+        print(np.sum(damage * critical_multiplier), np.sum(damage) * critical_multiplier)
+        print(dpt)
 
         cdef float cap = 460e3
-        cdef float dr = <float>1/(<float>1+(dpt)/cap)
+        cdef float dr = <float>1/(<float>1 + <float>(dpt/cap))
         return dr
     
     def dynamic_dps_2(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):

@@ -55,7 +55,6 @@ class FireMode():
         self.totalDamage = Parameter( self.data.get("totalDamage", 1) )
         self.criticalChance = Parameter( self.data.get("criticalChance", 0) )
         self.criticalMultiplier = Parameter( self.data.get("criticalMultiplier", 1) )
-        # self.criticalMultiplier.base = round(self.criticalMultiplier.base * (128 - 1/32), 0) / (128 - 1/32) # quantization happens on the base value, not the modded value
         self.procChance = Parameter( self.data.get("procChance", 0) )
         self.procProbabilities = np.array([0]*20, dtype=np.single)
         self.procAllowances = np.array([1]*20, dtype=np.single)
@@ -70,45 +69,89 @@ class FireMode():
         self.embedDelay = Parameter( self.data.get("embedDelay", 0) )
 
         self.forcedProc = self.data.get("forcedProc", []) # indices corresponding to proc that will be forced
-        self.combine_elemental = []
 
         self.radial = False
         self.unique_proc_count = 0
         self.condition_overloaded = False
 
         # mods
-        self.damagePerShot_m = {"base":Mod(changed_callbacks=[self.calc_modded_damage]), "additive_base":Mod(changed_callbacks=[self.calc_modded_damage]), 
-                                "condition_overload_base":Mod(changed_callbacks=[self.calc_modded_damage]), "condition_overload_multiplier":Mod(changed_callbacks=[self.calc_modded_damage]), 
-                                "direct":Mod(changed_callbacks=[self.calc_modded_damage]), "final_multiplier":Mod(value=1,changed_callbacks=[self.calc_modded_damage]), 
-                                "multishot_multiplier":Mod(value=1,changed_callbacks=[self.calc_modded_damage])}
-        self.criticalChance_m = {"base":Mod(), "additive_base":Mod(), "additive_final":Mod(), "covenant":Mod(), "deadly_munitions":Mod(value=1)}
-        self.criticalMultiplier_m = {"base":Mod(), "additive_base":Mod(), "additive_final":Mod(), "final_multiplier":Mod(value=1)}
-        self.procChance_m = {"base":Mod(), "additive_base":Mod(), "additive_final":Mod(), "final_multiplier":Mod(value=1), "multishot_multiplier":Mod(value=1)}
-        self.magazineSize_m = {"base":Mod()}
-        self.fireRate_m = {"base":Mod(), "final_multiplier":Mod(value=1)}
-        self.reloadTime_m = {"base":Mod()}
-        self.multishot_m = {"base":Mod()}
-        self.heat_m = {"base":Mod(), "uncombinable":Mod()}
-        self.cold_m = {"base":Mod(), "uncombinable":Mod()}
-        self.electric_m = {"base":Mod(), "uncombinable":Mod()}
-        self.toxin_m = {"base":Mod(), "uncombinable":Mod()}
-        self.blast_m = {"base":Mod()}
-        self.radiation_m = {"base":Mod()}
-        self.gas_m = {"base":Mod()}
-        self.magnetic_m = {"base":Mod()}
-        self.viral_m = {"base":Mod()}
-        self.corrosive_m = {"base":Mod()}
+        self.combine_elemental = []
 
-        self.impact_m = {"base":Mod(), "stance":Mod()}
-        self.puncture_m = {"base":Mod(), "stance":Mod()}
-        self.slash_m = {"base":Mod(), "stance":Mod()}
+        self.damagePerShot_m = {"base":0, "additive_base":0, 
+                                "condition_overload_base":0, "condition_overload_multiplier":0, 
+                                "direct":0, "final_multiplier":1, 
+                                "multishot_multiplier":1}
+        self.criticalChance_m = {"base":0, "additive_base":0, "additive_final":0, "covenant":0, "deadly_munitions":1}
+        self.criticalMultiplier_m = {"base":0, "additive_base":0, "additive_final":0, "final_multiplier":1}
+        self.procChance_m = {"base":0, "additive_base":0, "additive_final":0, "final_multiplier":1, "multishot_multiplier":1}
+        self.magazineSize_m = {"base":0}
+        self.fireRate_m = {"base":0, "final_multiplier":1}
+        self.reloadTime_m = {"base":0}
+        self.multishot_m = {"base":0}
+        self.heat_m = {"base":0, "uncombinable":0}
+        self.cold_m = {"base":0, "uncombinable":0}
+        self.electric_m = {"base":0, "uncombinable":0}
+        self.toxin_m = {"base":0, "uncombinable":0}
+        self.blast_m = {"base":0}
+        self.radiation_m = {"base":0}
+        self.gas_m = {"base":0}
+        self.magnetic_m = {"base":0}
+        self.viral_m = {"base":0}
+        self.corrosive_m = {"base":0}
 
-        self.statusDuration_m = {"base":Mod()}
-        self.factionDamage_m = {"base":Mod()}
-        self.ammoCost_m = {"base":Mod(), "energized_munitions":Mod()}
+        self.impact_m = {"base":0, "stance":0}
+        self.puncture_m = {"base":0, "stance":0}
+        self.slash_m = {"base":0, "stance":0}
 
-        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"].value > 0) or (self.damagePerShot_m["condition_overload_multiplier"].value > 0)
+        self.statusDuration_m = {"base":0}
+        self.factionDamage_m = {"base":0}
+        self.ammoCost_m = {"base":0, "energized_munitions":0}
+
+        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"] > 0) or (self.damagePerShot_m["condition_overload_multiplier"] > 0)
         self.fire_mode_effects:List[FireModeEffect] = [FireModeEffect(self, name) for name in self.data.get("secondaryEffects", {})]
+
+    def get_mod_dict(self):
+        mods = dict(damagePerShot_m=self.damagePerShot_m, criticalChance_m=self.criticalChance_m, criticalMultiplier_m=self.criticalMultiplier_m, 
+                    procChance_m=self.procChance_m, magazineSize_m=self.magazineSize_m, fireRate_m=self.fireRate_m, 
+                    reloadTime_m=self.reloadTime_m, multishot_m=self.multishot_m, heat_m=self.heat_m, 
+                    cold_m=self.cold_m, electric_m=self.electric_m, toxin_m=self.toxin_m, 
+                    blast_m=self.blast_m, radiation_m=self.radiation_m, gas_m=self.gas_m, 
+                    magnetic_m=self.magnetic_m, viral_m=self.viral_m, corrosive_m=self.corrosive_m, 
+                    impact_m=self.impact_m, puncture_m=self.puncture_m, slash_m=self.slash_m, 
+                    statusDuration_m=self.statusDuration_m, factionDamage_m=self.factionDamage_m, ammoCost_m=self.ammoCost_m, 
+                    combine_elemental=self.combine_elemental)
+        return mods
+    def load_mod_dict(self, mods:dict):
+        self.combine_elemental = mods["combine_elemental"]
+
+        self.damagePerShot_m = mods["damagePerShot_m"]
+        self.criticalChance_m = mods["criticalChance_m"]
+        self.criticalMultiplier_m = mods["criticalMultiplier_m"]
+        self.procChance_m = mods["procChance_m"]
+        self.magazineSize_m = mods["magazineSize_m"]
+        self.fireRate_m = mods["fireRate_m"]
+        self.reloadTime_m = mods["reloadTime_m"]
+        self.multishot_m = mods["multishot_m"]
+        self.heat_m = mods["heat_m"]
+        self.cold_m = mods["cold_m"]
+        self.electric_m = mods["electric_m"]
+        self.toxin_m = mods["toxin_m"]
+        self.blast_m = mods["blast_m"]
+        self.radiation_m = mods["radiation_m"]
+        self.gas_m = mods["gas_m"]
+        self.magnetic_m = mods["magnetic_m"]
+        self.viral_m = mods["viral_m"]
+        self.corrosive_m = mods["corrosive_m"]
+
+        self.impact_m = mods["impact_m"]
+        self.puncture_m = mods["puncture_m"]
+        self.slash_m = mods["slash_m"]
+
+        self.statusDuration_m = mods["statusDuration_m"]
+        self.factionDamage_m = mods["factionDamage_m"]
+        self.ammoCost_m = mods["ammoCost_m"]
+
+        self.condition_overloaded = (self.damagePerShot_m["condition_overload_base"] > 0) or (self.damagePerShot_m["condition_overload_multiplier"] > 0)
 
     def reset(self):
         self.attack_index = 1
@@ -128,14 +171,16 @@ class FireMode():
 
         self.apply_mods()
 
+
+
     def apply_mods(self):
         ## Damage
         self.calc_full_damage_stack()
         
         ## Critical Chance
-        self.criticalChance.modded = ((self.criticalChance.base + self.criticalChance_m["additive_base"].value) * \
-                                                (1 + self.criticalChance_m["base"].value) + self.criticalChance_m["additive_final"].value ) * \
-                                                    self.criticalChance_m["deadly_munitions"].value + self.criticalChance_m["covenant"].value
+        self.criticalChance.modded = ((self.criticalChance.base + self.criticalChance_m["additive_base"]) * \
+                                                (1 + self.criticalChance_m["base"]) + self.criticalChance_m["additive_final"] ) * \
+                                                    self.criticalChance_m["deadly_munitions"] + self.criticalChance_m["covenant"]
 
         # ## Critical Damage
          # quantization happens on the base value, not the modded value
@@ -143,53 +188,55 @@ class FireMode():
         cdef float cm_base_modified = self.criticalMultiplier.base_modified
         cdef float cm_modded = 1
 
-        cm_base_modified += self.criticalMultiplier_m["additive_base"].value
+        cm_base_modified += <float>self.criticalMultiplier_m["additive_base"]
         cm_base_modified = round(cm_base_modified  * const.CD_QT)  * const.I_CD_QT
 
         self.criticalMultiplier.base_modified = cm_base_modified
-        cm_modded = ((self.criticalMultiplier.base_modified) * \
-                                                (<float>1 + <float>self.criticalMultiplier_m["base"].value) + <float>self.criticalMultiplier_m["additive_final"].value )
+        cm_modded = self.criticalMultiplier.base_modified * (<float>1 + <float>self.criticalMultiplier_m["base"]) + <float>self.criticalMultiplier_m["additive_final"] 
         self.criticalMultiplier.modded = cm_modded
 
+
+        ## Multishot
+        self.multishot.modded = <float>self.multishot.base * (<float>1 + <float>self.multishot_m["base"])
+
         ## Status chance
-        self.procChance.modded = (self.procChance.base + self.procChance_m["additive_base"].value) * \
-                                        ((1 + self.procChance_m["base"].value) + self.procChance_m["additive_final"].value) *\
-                                        self.procChance_m["final_multiplier"].value * self.procChance_m["multishot_multiplier"].value
+        
+        self.procChance.modded = (self.procChance.base + self.procChance_m["additive_base"]) * \
+                                        ((1 + self.procChance_m["base"]) + self.procChance_m["additive_final"]) *\
+                                        self.procChance_m["final_multiplier"]
 
         ## Other
-        self.multishot.modded = <float>self.multishot.base * (<float>1 + <float>self.multishot_m["base"].value)
-        self.fireRate.modded = <float>self.fireRate.base * (<float>1 + <float>self.fireRate_m["base"].value)
-        self.fireRate.modded = self.fireRate.modded
+        self.fireRate.modded = <float>self.fireRate.base * (<float>1 + <float>self.fireRate_m["base"])
         self.fireTime.modded = <float>20 if self.fireRate.modded<=0.05 else <float>(1 / self.fireRate.modded)
-        self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"].value)
-        self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"].value)
-        self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"].value)
+        self.reloadTime.modded = self.reloadTime.base / (1 + self.reloadTime_m["base"])
+        self.magazineSize.modded = self.magazineSize.base * (1 + self.magazineSize_m["base"])
+        self.chargeTime.modded = self.chargeTime.base / (1 + self.fireRate_m["base"])
         self.embedDelay.modded = self.embedDelay.base
-        self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"].value) * max(0, 1 - self.ammoCost_m["energized_munitions"].value)
+        self.ammoCost.modded = self.ammoCost.base * max(0, 1 - self.ammoCost_m["base"]) * max(0, 1 - self.ammoCost_m["energized_munitions"])
 
         for fire_mode_effect in self.fire_mode_effects:
             fire_mode_effect.apply_mods()
 
     def calc_full_damage_stack(self):
         np.copyto( self.damagePerShot.proportions, self.damagePerShot.base_proportions )
-        self.damagePerShot.proportions[0] *= (<float>1 + <float>self.impact_m["base"].value)
-        self.damagePerShot.proportions[1] *= (<float>1 + <float>self.puncture_m["base"].value)
-        self.damagePerShot.proportions[2] *= (<float>1 + <float>self.slash_m["base"].value)
+        self.damagePerShot.proportions[0] *= (<float>1 + <float>self.impact_m["base"])
+        self.damagePerShot.proportions[1] *= (<float>1 + <float>self.puncture_m["base"])
+        self.damagePerShot.proportions[2] *= (<float>1 + <float>self.slash_m["base"])
 
-        self.damagePerShot.proportions[3] += <float>self.heat_m["base"].value
-        self.damagePerShot.proportions[4] += <float>self.cold_m["base"].value
-        self.damagePerShot.proportions[5] += <float>self.electric_m["base"].value
-        self.damagePerShot.proportions[6] += <float>self.toxin_m["base"].value
+        self.damagePerShot.proportions[3] += <float>self.heat_m["base"]
+        self.damagePerShot.proportions[4] += <float>self.cold_m["base"]
+        self.damagePerShot.proportions[5] += <float>self.electric_m["base"]
+        self.damagePerShot.proportions[6] += <float>self.toxin_m["base"]
 
-        self.damagePerShot.proportions[7] += <float>self.blast_m["base"].value
-        self.damagePerShot.proportions[8] += <float>self.radiation_m["base"].value
-        self.damagePerShot.proportions[9] += <float>self.gas_m["base"].value
-        self.damagePerShot.proportions[10] += <float>self.magnetic_m["base"].value
-        self.damagePerShot.proportions[11] += <float>self.viral_m["base"].value
-        self.damagePerShot.proportions[12] += <float>self.corrosive_m["base"].value
+        self.damagePerShot.proportions[7] += <float>self.blast_m["base"]
+        self.damagePerShot.proportions[8] += <float>self.radiation_m["base"]
+        self.damagePerShot.proportions[9] += <float>self.gas_m["base"]
+        self.damagePerShot.proportions[10] += <float>self.magnetic_m["base"]
+        self.damagePerShot.proportions[11] += <float>self.viral_m["base"]
+        self.damagePerShot.proportions[12] += <float>self.corrosive_m["base"]
 
         if 7 in self.combine_elemental:
-            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + <float>self.damagePerShot.proportions[4]
+            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[4]
             self.damagePerShot.proportions[3] = 0
             self.damagePerShot.proportions[4] = 0
         if 8 in self.combine_elemental:
@@ -216,7 +263,6 @@ class FireMode():
         self.procProbabilities = self.damagePerShot.proportions * self.procAllowances
         tot_weight = sum(self.procProbabilities)
         self.procProbabilities *= 1/tot_weight if tot_weight>0 else 0
-
         self.damagePerShot.quantized = np.round(self.damagePerShot.proportions * <float>16)/<float>16
 
         self.calc_modded_damage()
@@ -225,13 +271,12 @@ class FireMode():
             fire_mode_effect.calc_full_damage_stack()
 
     def calc_modded_damage(self):
-        self.damagePerShot.set_base_total(self.totalDamage.base + <float>self.damagePerShot_m["additive_base"].value)
+        self.damagePerShot.set_base_total(self.totalDamage.base + <float>self.damagePerShot_m["additive_base"])
         self.totalDamage.base_modified = self.damagePerShot.base_total
 
-        cdef float direct_damage = <float>0 if self.radial else <float>self.unique_proc_count * (<float>self.damagePerShot_m["condition_overload_base"].value + <float>self.damagePerShot_m["direct"].value)
-        cdef float damage_multiplier = (<float>1 + <float>self.damagePerShot_m["base"].value + direct_damage) * \
-                                <float>self.damagePerShot_m["multishot_multiplier"].value * \
-                                    <float>self.damagePerShot_m["final_multiplier"].value
+        cdef float direct_damage = <float>0 if self.radial else <float>self.unique_proc_count * (<float>self.damagePerShot_m["condition_overload_base"] + <float>self.damagePerShot_m["direct"])
+        cdef float damage_multiplier = (<float>1 + <float>self.damagePerShot_m["base"] + direct_damage) * \
+                                    <float>self.damagePerShot_m["final_multiplier"]
 
         self.damagePerShot.modded = ((self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier).astype(np.single)
         self.totalDamage.modded = self.totalDamage.base_modified * damage_multiplier
@@ -246,8 +291,8 @@ class FireMode():
         self.magazineSize.current -= self.ammoCost.modded
 
         if self.trigger == "HELD":
-            self.damagePerShot_m["multishot_multiplier"].set_value(multishot_roll)
-            self.procChance_m["multishot_multiplier"].set_value(multishot_roll)
+            self.damagePerShot_m["multishot_multiplier"] = multishot_roll
+            self.procChance_m["multishot_multiplier"] = multishot_roll
             multishot = <float>1
 
         for _ in range(multishot):
@@ -353,23 +398,6 @@ class Parameter():
     def reset(self):
         self.base_modified = self.base
         self.modded = self.base
-
-
-class Mod():
-    def __init__(self, key='', value=<float>0, changed_callbacks=[]) -> None:
-        self.key = key
-        self.value = <float>value
-        self.changed_callbacks = changed_callbacks
-
-    def set_value(self, value, callback:bool=False):
-        self.value = <float>value
-
-        for callback in self.changed_callbacks:
-            callback()
-
-    def add_callback(self, func):
-        if func not in self.changed_callbacks:
-            self.changed_callbacks.append(func)
 
 
 class EventTrigger():
