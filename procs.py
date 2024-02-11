@@ -1,13 +1,13 @@
 from __future__ import annotations
 from collections import deque
 import numpy as np
-import constants as const
+import warframe_simulacrum.constants as const
 from typing import List, TYPE_CHECKING
 import heapq
 
-from weapon import EventTrigger, FireMode
+from warframe_simulacrum.weapon import EventTrigger, FireMode
 if TYPE_CHECKING:
-    from unit import Unit
+    from warframe_simulacrum.unit import Unit
 
 class Proc:
     def __init__(self, enemy: Unit, fire_mode: FireMode, duration: int, damage: float):

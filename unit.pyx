@@ -6,14 +6,14 @@ import numpy as np
 from pathlib import Path
 import os
 import math
-import procs as pm
+import warframe_simulacrum.procs as pm
 
-import constants as const
+import warframe_simulacrum.constants as const
 from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from simulation import Simulacrum
-    from weapon import FireMode
+    from warframe_simulacrum.simulation import Simulacrum
+    from warframe_simulacrum.weapon import FireMode
 
 class Unit:
     def __init__(self, name: str, level: int, simulation:Simulacrum):

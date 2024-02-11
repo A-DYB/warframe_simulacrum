@@ -1,0 +1,7 @@
+data/ExportRivenUpgrades.json
+data/ExportWeapons.json
+data/weeklyRivens.json
+*.c
+*.pyd
+build/
+__pycache__/

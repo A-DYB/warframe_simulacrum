@@ -5,15 +5,15 @@ import os
 from pathlib import Path
 import json
 import re
-import constants as const
+import warframe_simulacrum.constants as const
 import heapq
 
 from random import random
 from typing import List, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from simulation import Simulacrum
-    from unit import Unit
+    from warframe_simulacrum.simulation import Simulacrum
+    from warframe_simulacrum.unit import Unit
 
 
 class Weapon():
@@ -75,7 +75,7 @@ class FireMode():
         self.condition_overloaded = False
 
         # mods
-        self.combine_elemental = []
+        self.combineElemental_m = {"indices":[]}
 
         self.damagePerShot_m = {"base":0, "additive_base":0, 
                                 "condition_overload_base":0, "condition_overload_multiplier":0, 
@@ -119,10 +119,10 @@ class FireMode():
                     magnetic_m=self.magnetic_m, viral_m=self.viral_m, corrosive_m=self.corrosive_m, 
                     impact_m=self.impact_m, puncture_m=self.puncture_m, slash_m=self.slash_m, 
                     statusDuration_m=self.statusDuration_m, factionDamage_m=self.factionDamage_m, ammoCost_m=self.ammoCost_m, 
-                    combine_elemental=self.combine_elemental)
+                    combineElemental_m=self.combineElemental_m)
         return mods
     def load_mod_dict(self, mods:dict):
-        self.combine_elemental = mods["combine_elemental"]
+        self.combineElemental_m = mods["combineElemental_m"]
 
         self.damagePerShot_m = mods["damagePerShot_m"]
         self.criticalChance_m = mods["criticalChance_m"]
@@ -235,30 +235,32 @@ class FireMode():
         self.damagePerShot.proportions[11] += <float>self.viral_m["base"]
         self.damagePerShot.proportions[12] += <float>self.corrosive_m["base"]
 
-        if 7 in self.combine_elemental:
-            self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[4]
-            self.damagePerShot.proportions[3] = 0
-            self.damagePerShot.proportions[4] = 0
-        if 8 in self.combine_elemental:
-            self.damagePerShot.proportions[8] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[5]
-            self.damagePerShot.proportions[3] = 0
-            self.damagePerShot.proportions[5] = 0
-        if 9 in self.combine_elemental:
-            self.damagePerShot.proportions[9] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[6]
-            self.damagePerShot.proportions[3] = 0
-            self.damagePerShot.proportions[6] = 0
-        if 10 in self.combine_elemental:
-            self.damagePerShot.proportions[10] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[5]
-            self.damagePerShot.proportions[4] = 0
-            self.damagePerShot.proportions[5] = 0
-        if 11 in self.combine_elemental:
-            self.damagePerShot.proportions[11] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[6]
-            self.damagePerShot.proportions[4] = 0
-            self.damagePerShot.proportions[6] = 0
-        if 12 in self.combine_elemental:
-            self.damagePerShot.proportions[12] += self.damagePerShot.proportions[5] + self.damagePerShot.proportions[6]
-            self.damagePerShot.proportions[5] = 0
-            self.damagePerShot.proportions[6] = 0
+        # combine elements in desired order
+        for idx in self.combineElemental_m["indices"]:
+            if idx==7:
+                self.damagePerShot.proportions[7] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[4]
+                self.damagePerShot.proportions[3] = 0
+                self.damagePerShot.proportions[4] = 0
+            elif idx==8:
+                self.damagePerShot.proportions[8] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[5]
+                self.damagePerShot.proportions[3] = 0
+                self.damagePerShot.proportions[5] = 0
+            elif idx==9:
+                self.damagePerShot.proportions[9] += self.damagePerShot.proportions[3] + self.damagePerShot.proportions[6]
+                self.damagePerShot.proportions[3] = 0
+                self.damagePerShot.proportions[6] = 0
+            elif idx==10:
+                self.damagePerShot.proportions[10] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[5]
+                self.damagePerShot.proportions[4] = 0
+                self.damagePerShot.proportions[5] = 0
+            elif idx==11:
+                self.damagePerShot.proportions[11] += self.damagePerShot.proportions[4] + self.damagePerShot.proportions[6]
+                self.damagePerShot.proportions[4] = 0
+                self.damagePerShot.proportions[6] = 0
+            elif idx==12:
+                self.damagePerShot.proportions[12] += self.damagePerShot.proportions[5] + self.damagePerShot.proportions[6]
+                self.damagePerShot.proportions[5] = 0
+                self.damagePerShot.proportions[6] = 0
 
         self.procProbabilities = self.damagePerShot.proportions * self.procAllowances
         tot_weight = sum(self.procProbabilities)

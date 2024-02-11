@@ -1,5 +1,5 @@
-from weapon import Weapon, FireMode, FireModeEffect, EventTrigger
-from unit import Unit, Protection
+from warframe_simulacrum.weapon import Weapon, FireMode, FireModeEffect, EventTrigger
+from warframe_simulacrum.unit import Unit, Protection
 from typing import List, Tuple
 from queue import PriorityQueue
 import seaborn as sns
@@ -9,8 +9,6 @@ import time
 import heapq
 import numpy as np
 from scipy.optimize import curve_fit
-import sympy
-from sympy import Symbol
 import os
 import constants
 
