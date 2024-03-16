@@ -7,63 +7,64 @@
         "armor_type": "None",
         "base_shield": 0,
         "base_health": 50000,
-        "type": "ET_NORMAL",
         "damage_controller_type": "DC_DYNAMIC_DPS_2",
         "faction": "The Murmur",
         "base_overguard": 0,
         "is_eximus": false,
-        "bodypart_multipliers":{
-            "body":{
-                "multiplier":1,
-                "critical_damage_multiplier":1
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1,
+                "critical_damage_multiplier": 1
             },
-            "head":{
-                "multiplier":0.999,
-                "critical_damage_multiplier":1
+            "head": {
+                "multiplier": 0.999,
+                "critical_damage_multiplier": 1
             },
-            "appendage":{
-                "multiplier":0.666,
-                "critical_damage_multiplier":1
+            "appendage": {
+                "multiplier": 0.666,
+                "critical_damage_multiplier": 1
             },
-            "tail":{
-                "multiplier":0.666,
-                "critical_damage_multiplier":1
+            "tail": {
+                "multiplier": 0.666,
+                "critical_damage_multiplier": 1
             },
-            "orb":{
-                "multiplier":1,
-                "critical_damage_multiplier":1
+            "orb": {
+                "multiplier": 1,
+                "critical_damage_multiplier": 1
             }
         },
-        "animation_multipliers":{
-            "normal":{
-                "multiplier":1,
-                "critical_damage_multiplier":1
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1,
+                "critical_damage_multiplier": 1
             },
-            "slam":{
-                "multiplier":1.25,
-                "critical_damage_multiplier":1
+            "slam": {
+                "multiplier": 1.25,
+                "critical_damage_multiplier": 1
             },
-            "laser_hands":{
-                "multiplier":1.25,
-                "critical_damage_multiplier":1
+            "laser_hands": {
+                "multiplier": 1.25,
+                "critical_damage_multiplier": 1
             },
-            "spin":{
-                "multiplier":1.25,
-                "critical_damage_multiplier":1
+            "spin": {
+                "multiplier": 1.25,
+                "critical_damage_multiplier": 1
             }
-        }
+        },
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Archon": {
-        "base_health": 30000.0,
+        "base_health": 30000,
         "base_armor": 25,
-        "base_shield": 0.0,
+        "base_shield": 0,
         "base_level": 1,
-        "base_dr": 1,
+        "base_dr": 1.0,
         "health_vulnerability": 0.8,
         "health_type": "Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Infested",
         "base_overguard": 0,
         "is_eximus": false,
@@ -83,9 +84,10 @@
                 "name": "Slash",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":0.175
+                "damage_scaling": 0.175
             }
-        }
+        },
+        "shield_vulnerability": 1.0
     },
     "The Anatomizer": {
         "shield_type": "None",
@@ -95,10 +97,12 @@
         "armor_type": "None",
         "base_shield": 0,
         "base_health": 12000,
-        "type": "ET_NORMAL",
         "faction": "The Murmur",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Gokstad Officer": {
         "shield_type": "None",
@@ -108,302 +112,336 @@
         "armor_type": "Ferrite",
         "base_shield": 0,
         "base_health": 1000,
-        "type": "ET_NORMAL",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Demolisher Heavy Gunner": {
-        "base_health": 2000.0,
-        "base_armor": 200.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 2000,
+        "base_armor": 200,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 0.8,
-        "base_overguard": 0.0,
+        "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Demolisher Devourer": {
-        "base_health": 2500.0,
-        "base_armor": 50.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 2500,
+        "base_armor": 50,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 0.8,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "damage_controller_type": "DC_STATIC_DPS_1",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Ancient": {
-        "base_health": 100.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 100,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "health_type": "Fossilized",
         "armor_type": "None",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Demolyst Heqet": {
-        "base_health": 2000.0,
-        "base_armor": 0.0,
-        "base_shield": 200.0,
-        "base_level": 1.0,
+        "base_health": 2000,
+        "base_armor": 0,
+        "base_shield": 200,
+        "base_level": 1,
         "base_dr": 0.8,
         "health_type": "Flesh",
         "armor_type": "None",
         "shield_type": "Shield",
-        "type": "ET_DEMOLYST",
         "faction": "Corpus",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Corpus Tech": {
-        "base_health": 700.0,
-        "base_armor": 0.0,
-        "base_shield": 250.0,
-        "base_level": 15.0,
+        "base_health": 700,
+        "base_armor": 0,
+        "base_shield": 250,
+        "base_level": 15,
         "health_type": "Flesh",
         "armor_type": "None",
         "shield_type": "Proto Shield",
-        "type": "ET_NORMAL",
         "faction": "Corpus",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Tenno": {
-        "base_health": 250.0,
-        "base_armor": 150.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 250,
+        "base_armor": 150,
+        "base_shield": 0,
+        "base_level": 1,
         "health_type": "Tenno Health",
         "armor_type": "Tenno Armor",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Tenno",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Infested Hemocyte": {
-        "base_health": 726.0,
-        "base_armor": 175.0,
-        "base_shield": 0.0,
-        "base_level": 10.0,
+        "base_health": 726,
+        "base_armor": 175,
+        "base_shield": 0,
+        "base_level": 10,
         "health_type": "Fossilized",
         "armor_type": "Infested Sinew",
         "shield_type": "None",
-        "type": "ET_LEPHANTIS",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Corpus Hemocyte": {
-        "base_health": 726.0,
-        "base_armor": 175.0,
-        "base_shield": 0.0,
-        "base_level": 10.0,
+        "base_health": 726,
+        "base_armor": 175,
+        "base_shield": 0,
+        "base_level": 10,
         "health_type": "Fossilized",
         "armor_type": "Infested Sinew",
         "shield_type": "None",
-        "type": "ET_LEPHANTIS",
         "faction": "Corpus",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Grineer Hemocyte": {
-        "base_health": 748.0,
-        "base_armor": 175.0,
-        "base_shield": 0.0,
-        "base_level": 10.0,
+        "base_health": 748,
+        "base_armor": 175,
+        "base_shield": 0,
+        "base_level": 10,
         "health_type": "Fossilized",
         "armor_type": "Infested Sinew",
         "shield_type": "None",
-        "type": "ET_LEPHANTIS",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Auditor": {
-        "base_health": 1000.0,
-        "base_armor": 50.0,
-        "base_shield": 2500.0,
-        "base_level": 1.0,
+        "base_health": 1000,
+        "base_armor": 50,
+        "base_shield": 2500,
+        "base_level": 1,
         "health_type": "Robotic",
         "armor_type": "Alloy",
         "shield_type": "Shield",
-        "type": "ET_NORMAL",
         "faction": "Corpus",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Teralyst Shield": {
-        "base_health": 0.000001,
-        "base_armor": 0.0,
-        "base_shield": 1500.0,
-        "base_level": 1.0,
+        "base_health": 0,
+        "base_armor": 0,
+        "base_shield": 1500,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Machinery",
         "armor_type": "None",
         "shield_type": "Eidolon Shield",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Teralyst": {
-        "base_health": 9000.0,
-        "base_armor": 125.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 9000,
+        "base_armor": 125,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Robotic",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Hydrolyst Shield": {
-        "base_health": 0.000001,
-        "base_armor": 0.0,
-        "base_shield": 2000.0,
-        "base_level": 1.0,
+        "base_health": 0,
+        "base_armor": 0,
+        "base_shield": 2000,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Machinery",
         "armor_type": "None",
         "shield_type": "Eidolon Shield",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Hydrolyst": {
-        "base_health": 12000.0,
-        "base_armor": 150.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 12000,
+        "base_armor": 150,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Gantulyst": {
-        "base_health": 10000.0,
-        "base_armor": 130.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 10000,
+        "base_armor": 130,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Gantulyst Shield": {
-        "base_health": 0.000001,
-        "base_armor": 0.0,
-        "base_shield": 1800.0,
-        "base_level": 1.0,
+        "base_health": 0,
+        "base_armor": 0,
+        "base_shield": 1800,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Machinery",
         "armor_type": "None",
         "shield_type": "Eidolon Shield",
-        "type": "ET_EIDOLON",
         "faction": "Sentient",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Armis Ulta": {
-        "base_health": 1000.0,
-        "base_armor": 50.0,
-        "base_shield": 2500.0,
-        "base_level": 1.0,
+        "base_health": 1000,
+        "base_armor": 50,
+        "base_shield": 2500,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Flesh",
         "armor_type": "Alloy",
         "shield_type": "Shield",
-        "type": "ET_NORMAL",
         "faction": "Corpus",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Arid Heavy Gunner": {
-        "base_health": 300.0,
-        "base_armor": 500.0,
-        "base_shield": 0.0,
-        "base_level": 8.0,
+        "base_health": 300,
+        "base_armor": 500,
+        "base_shield": 0,
+        "base_level": 8,
         "base_dr": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Demolisher Expired": {
-        "base_health": 1500.0,
-        "base_armor": 50.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 1500,
+        "base_armor": 50,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Eidolon Lure": {
-        "base_health": 1000.0,
-        "base_armor": 100.0,
-        "base_shield": 600.0,
-        "base_level": 1.0,
+        "base_health": 1000,
+        "base_armor": 100,
+        "base_shield": 600,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Machinery",
         "armor_type": "Alloy",
         "shield_type": "Shield",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Acolyte": {
-        "base_health": 350.0,
-        "base_armor": 50.0,
-        "base_shield": 200.0,
-        "base_level": 1.0,
+        "base_health": 350,
+        "base_armor": 50,
+        "base_shield": 200,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_vulnerability": 0.375,
         "shield_vulnerability": 1.5,
         "health_type": "Flesh",
         "armor_type": "Ferrite",
         "shield_type": "Shield",
-        "type": "ET_ACOLYTE",
         "damage_controller_type": "DC_STATIC_DPS_2",
         "critical_controller_type": "CC_1",
         "faction": "Stalker",
         "base_overguard": 0,
         "is_eximus": false,
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
         "proc_info": {
             "PT_IMPACT": {
                 "name": "Impact",
@@ -419,14 +457,14 @@
                 "name": "Slash",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":1
+                "damage_scaling": 1
             },
             "PT_HEAT": {
                 "name": "Heat",
                 "duration": 6,
                 "max_stacks": 4,
                 "refresh": false,
-                "damage_scaling":1
+                "damage_scaling": 1
             },
             "PT_COLD": {
                 "name": "Cold",
@@ -437,13 +475,13 @@
                 "name": "Electric",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":1
+                "damage_scaling": 1
             },
             "PT_TOXIN": {
                 "name": "Toxin",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":1
+                "damage_scaling": 1
             },
             "PT_BLAST": {
                 "name": "Blast",
@@ -459,7 +497,7 @@
                 "name": "Gas",
                 "duration": 6,
                 "max_stacks": 4,
-                "damage_scaling":1
+                "damage_scaling": 1
             },
             "PT_MAGNETIC": {
                 "name": "Magnetic",
@@ -480,231 +518,257 @@
                 "name": "Void",
                 "duration": 3,
                 "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
             }
         }
     },
     "Charger": {
-        "base_health": 80.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 80,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Infested",
         "armor_type": "None",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Charger Eximus": {
-        "base_health": 80.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 80,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Infested",
         "armor_type": "None",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Infested",
         "base_overguard": 12,
-        "is_eximus": true
+        "is_eximus": true,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Acolyte Misery": {
-        "base_health": 350.0,
-        "base_armor": 50.0,
-        "base_shield": 200.0,
-        "base_level": 1.0,
+        "base_health": 350,
+        "base_armor": 50,
+        "base_shield": 200,
+        "base_level": 1,
         "base_dr": 0.4666666666666667,
         "health_type": "Flesh",
         "armor_type": "Ferrite",
         "shield_type": "Shield",
-        "type": "ET_ACOLYTE",
         "faction": "Stalker",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Infested Demolisher Boiler": {
-        "base_health": 3000.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 3000,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Infested",
         "armor_type": "None",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Infested Demolisher Juggernaut": {
-        "base_health": 3000.0,
-        "base_armor": 50.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 3000,
+        "base_armor": 50,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 0.8,
         "health_type": "Infested",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Infested Demolisher Thrasher": {
-        "base_health": 3250.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 3250,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "health_type": "Infested",
         "armor_type": "None",
         "shield_type": "None",
-        "type": "ET_DEMOLISHER",
         "faction": "Infested",
         "base_overguard": 0,
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Manic Bombard Eximus": {
-        "base_health": 525.0,
-        "base_armor": 425.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 525,
+        "base_armor": 425,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
-        "base_overguard": 12.0,
+        "base_overguard": 12,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": true
+        "is_eximus": true,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Corrupted Heavy Gunner Eximus": {
-        "base_health": 425.0,
-        "base_armor": 325.0,
-        "base_shield": 0.0,
-        "base_level": 21.0,
+        "base_health": 425,
+        "base_armor": 325,
+        "base_shield": 0,
+        "base_level": 21,
         "base_dr": 1.0,
-        "base_overguard": 12.0,
+        "base_overguard": 12,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Orokin",
-        "is_eximus": true
+        "is_eximus": true,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Drekar Manic Bombard": {
-        "base_health": 1750.0,
-        "base_armor": 500.0,
-        "base_shield": 0.0,
-        "base_level": 4.0,
+        "base_health": 1750,
+        "base_armor": 500,
+        "base_shield": 0,
+        "base_level": 4,
         "base_dr": 1.0,
-        "base_overguard": 0.0,
+        "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Arid Lancer": {
-        "base_health": 100.0,
-        "base_armor": 100.0,
+        "base_health": 100,
+        "base_armor": 100,
         "base_shield": 0,
-        "base_level": 1.0,
+        "base_level": 1,
         "base_dr": 1.0,
         "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Thrax Centurion": {
-        "base_health": 3600.0,
-        "base_armor": 200.0,
+        "base_health": 3600,
+        "base_armor": 200,
         "base_shield": 0,
-        "base_level": 1.0,
+        "base_level": 1,
         "base_dr": 1.0,
-        "base_overguard": 15.0,
+        "base_overguard": 15,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Elite Lancer": {
-        "base_health": 150.0,
-        "base_armor": 200.0,
-        "base_shield": 0.0,
-        "base_level": 15.0,
+        "base_health": 150,
+        "base_armor": 200,
+        "base_shield": 0,
+        "base_level": 15,
         "base_dr": 1.0,
         "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Butcher Eximus1": {
-        "base_health": 237.0,
-        "base_armor": 301.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 237,
+        "base_armor": 301,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "base_overguard": 12,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": true
+        "is_eximus": true,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Butcher Eximus": {
-        "base_health": 237.0,
-        "base_armor": 296.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 237,
+        "base_armor": 296,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "base_overguard": 12,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": true
+        "is_eximus": true,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Butcher": {
-        "base_health": 50.0,
-        "base_armor": 0.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 50,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     },
     "Narmer Powerfist": {
-        "base_health": 100.0,
-        "base_armor": 5.0,
-        "base_shield": 0.0,
-        "base_level": 1.0,
+        "base_health": 100,
+        "base_armor": 5,
+        "base_shield": 0,
+        "base_level": 1,
         "base_dr": 1.0,
         "base_overguard": 0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "type": "ET_NORMAL",
         "faction": "Grineer",
-        "is_eximus": false
+        "is_eximus": false,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0
     }
 }

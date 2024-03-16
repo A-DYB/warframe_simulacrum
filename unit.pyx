@@ -6,6 +6,8 @@ import numpy as np
 from pathlib import Path
 import os
 import math
+import copy
+import collections.abc
 import warframe_simulacrum.procs as pm
 
 import warframe_simulacrum.constants as const
@@ -16,18 +18,20 @@ if TYPE_CHECKING:
     from warframe_simulacrum.weapon import FireMode
 
 class Unit:
-    def __init__(self, name: str, level: int, simulation:Simulacrum):
+    def __init__(self, name: str, level: int, simulation:Simulacrum, protection_scaling=const.NEW_PROTECTION_SCALING):
         self.name = name
         self.level = level
+        self.protection_scaling = protection_scaling
         self.simulation = simulation
 
-        unit_data = self.get_unit_data()
-        self.ud= unit_data
+        data = self.get_unit_data()
+        default_data = copy.deepcopy(const.DEFAULT_ENEMY_CONFIG)
+        unit_data = update(default_data, data)
 
         self.base_level = unit_data.get("base_level", 1)
         self.level = max(self.base_level, self.level)
         self.faction:str = unit_data["faction"]
-        self.type: str = unit_data["type"]
+        # self.type: str = unit_data["type"]
         self.is_eximus:bool = unit_data.get("is_eximus", False)
         self.procImmunities: np.array = np.array([1]*20, dtype=np.single)
         self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
@@ -37,8 +41,9 @@ class Unit:
         self.shield_vulnerability = <float>unit_data.get("shield_vulnerability", 1)
         self.proc_info = const.PROC_INFO.copy()
         if 'proc_info' in unit_data:
-            for k,v in unit_data['proc_info'].items():
-                self.proc_info[k] = v
+            self.proc_info = update(self.proc_info, unit_data['proc_info'])
+            # for k,v in unit_data['proc_info'].items():
+            #     self.proc_info[k] = v
 
         self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
         self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
@@ -60,6 +65,8 @@ class Unit:
         if 'animation_multipliers' in unit_data:
             self.animation_multipliers = unit_data['animation_multipliers']
 
+        # state
+        self.current_animation = 'normal'
         self.unique_proc_count = 0
         self.unique_proc_delta = False
         self.armor_dr = np.array([1]*20, dtype=np.single)
@@ -68,6 +75,34 @@ class Unit:
         self.last_damage = 0
         self.last_t0_damage = 0
 
+    def get_preview_info(self):
+        info = [
+            ("Enemy", self.name.capitalize(), ''),
+            ("Level", f'{self.base_level:.0f} -> {self.level:.0f}', ''),
+            ("Faction", self.faction.capitalize(), ''),
+        ]
+        info1 = []
+        if self.damage_controller_type != 'DC_NORMAL': info1.append(("Damage Controller", self.damage_controller_type, '')) 
+        if self.critical_controller_type != 'CC_NORMAL': info1.append(("Critical Controller", self.critical_controller_type, ''))
+        if len(info1)>0: 
+            info.append(("Category", "", '')) 
+            info += info1
+
+        info2 = []
+        if self.base_dr != 1: info2.append(("Base DR", f'{self.base_dr*100:.1f}%', '')) 
+        if self.health_vulnerability != 1: info2.append(("Health Vulnerabiltiy", f'{self.health_vulnerability:.2f}x', '')) 
+        if self.shield_vulnerability != 1: info2.append(("Shield Vulnerabiltiy", f'{self.shield_vulnerability:.2f}x', '')) 
+        if len(info2)>0: 
+            info.append(("Category", "", '')) 
+            info += info2
+
+        info.append(("Category", "", '')) 
+        if self.overguard.current_value > 0: info.append(("Overguard", f'{self.overguard.base:.1f} -> {self.overguard.current_value:.1f}', '')) 
+        if self.shield.current_value > 0: info.append(("Shield", f'{self.shield.base:.1f} -> {self.shield.current_value:.1f}', self.shield.protection_type_variant)) 
+        if self.health.current_value > 0: info.append(("Health", f'{self.health.base:.1f} -> {self.health.current_value:.1f}', self.health.protection_type_variant)) 
+        if self.armor.current_value > 0: info.append(("Armor", f'{self.armor.base:.1f} -> {self.armor.current_value:.0f}', self.armor.protection_type_variant)) 
+
+        return info
 
     def get_unit_data(self) -> dict:
         with open(os.path.join(Path(__file__).parent.resolve(),"data", "unit_data.json")) as f:
@@ -85,10 +120,14 @@ class Unit:
             self.proc_controller.cold_proc_manager.max_stacks = 4
             self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 0
         
+        self.current_animation = 'normal'
         self.unique_proc_count = 0
         self.unique_proc_delta = False
         self.armor_dr = np.array([1]*20, dtype=np.single)
         self.set_armor_dr()
+
+        self.last_damage = 0
+        self.last_t0_damage = 0
     
     def set_armor_dr(self):
         cdef int current_armor = self.armor.current_value
@@ -104,28 +143,34 @@ class Unit:
             self.armor_dr += <float>1
             
 
-    def pellet_hit(self, fire_mode:FireMode, bodypart='body', animation='normal'):
+    def pellet_hit(self, fire_mode:FireMode, bodypart='body'):
         # calculate conditional multiplier
         if fire_mode.unique_proc_count != self.unique_proc_count and fire_mode.condition_overloaded:
             fire_mode.unique_proc_count = self.unique_proc_count
             fire_mode.calc_modded_damage()
 
-        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart, animation)
-        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd, bodypart=bodypart, animation=animation)
+        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart)
+        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd, bodypart=bodypart)
 
         cdef float status_damage_base = fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier
-        self.apply_status(fire_mode, status_damage_base)
+        self.apply_status(fire_mode, status_damage_base, bodypart)
 
-    def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body', animation='normal'):
+    def apply_damage(self, fire_mode:FireMode, damage:np.array, critical_multiplier=1, bodypart='body', damage_tag=None):
         cdef float multiplier = 1
+        cdef float bodypart_multiplier = <float>self.bodypart_multipliers.get(bodypart, {}).get('multiplier', 1)
+        if damage_tag == 'radial' and bodypart == 'head':
+            bodypart_multiplier = 1
+        cdef float bodypart_bonus = 1
+        if bodypart == 'head':
+            bodypart_bonus = (1 + <float>fire_mode.weapon.damagePerShot_m["headshot_base"])
         
         # body part bonuses
-        multiplier *= (<float>self.bodypart_multipliers[bodypart]['multiplier'] * <float>self.animation_multipliers[animation]['multiplier'] )
+        multiplier *= (bodypart_multiplier * bodypart_bonus * <float>self.animation_multipliers[self.current_animation]['multiplier'] )
         multiplier *= self.base_dr
-        multiplier *= <float>fire_mode.damagePerShot_m["multishot_multiplier"]
+        multiplier *= (<float>fire_mode.weapon.damagePerShot_m["multishot_multiplier"] * (1 + fire_mode.multishot_damage))
 
         # # faction bonuses
-        cdef float faction_bonus = (1 + <float>fire_mode.factionDamage_m["base"])
+        cdef float faction_bonus = (1 + <float>fire_mode.weapon.factionDamage_m["base"])
         multiplier *= faction_bonus
 
         og, sg, hg = self.remove_protection(fire_mode, damage * multiplier, critical_multiplier)
@@ -191,7 +236,7 @@ class Unit:
         # return applied damage
         return overguard - self.overguard.current_value, shield - self.shield.current_value, health - self.health.current_value
     
-    def get_critical_multiplier(self, fire_mode:FireMode, bodypart:str, animation:str):
+    def get_critical_multiplier(self, fire_mode:FireMode, bodypart:str):
         cdef float bodypart_crit_bonus = <float>1
         cdef float animation_crit_bonus = <float>1
         cdef float criticalMultiplier_cold = <float>0
@@ -205,33 +250,33 @@ class Unit:
         # self.damage_controller.critical_tier = critical_tier
 
         if critical_tier > 0:
-            bodypart_crit_bonus = <float>1 if fire_mode.radial else self.bodypart_multipliers[bodypart]['critical_damage_multiplier']
-            animation_crit_bonus = <float>1 if fire_mode.radial else self.animation_multipliers[animation]['critical_damage_multiplier']
+            bodypart_crit_bonus = <float>1 if fire_mode.radial else self.bodypart_multipliers.get(bodypart, {}).get('critical_damage_multiplier', 1)
+            animation_crit_bonus = <float>1 if fire_mode.radial else self.animation_multipliers.get(self.current_animation, {}).get('critical_damage_multiplier', 1)
 
             cold_count = self.proc_controller.cold_proc_manager.count
             criticalMultiplier_cold = 0 if fire_mode.radial else <float>min(1, cold_count) * <float>0.1 + <float>max(0, cold_count-1) * <float>0.05
-            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * <float>fire_mode.criticalMultiplier_m["final_multiplier"]
+            base_critical_multiplier = (fire_mode.criticalMultiplier.modded + criticalMultiplier_cold) * bodypart_crit_bonus * <float>fire_mode.weapon.criticalMultiplier_m["final_multiplier"]
             effective_critical_multiplier = self.damage_controller.cc_func(base_critical_multiplier, critical_tier)
             return effective_critical_multiplier
         else:
             effective_critical_multiplier = self.damage_controller.cc_func(fire_mode.criticalMultiplier.modded, critical_tier)
             return effective_critical_multiplier
 
-    def apply_status(self, fire_mode:FireMode, status_damage: float):
-        total_status_chance = fire_mode.procChance.modded * fire_mode.procChance_m['multishot_multiplier']
+    def apply_status(self, fire_mode:FireMode, status_damage: float, bodypart:str):
+        total_status_chance = fire_mode.procChance.modded * fire_mode.weapon.procChance_m['multishot_multiplier']
         status_tier = int(total_status_chance) + int(random() < (total_status_chance) % 1)
 
         for _ in range(status_tier):
             roll = random()
             for i, effect_chance in enumerate(fire_mode.procProbabilities):
                 if roll < effect_chance:
-                    self.proc_controller.add_proc(i, fire_mode, status_damage)
+                    self.proc_controller.add_proc(i, fire_mode, status_damage, bodypart)
                     break
                 else:
                     roll -= effect_chance
 
         for proc_index in fire_mode.forcedProc:
-            self.proc_controller.add_proc(proc_index, fire_mode, status_damage)
+            self.proc_controller.add_proc(proc_index, fire_mode, status_damage, bodypart)
     
     def get_current_stats(self):
         vals = {"time":self.simulation.time, "overguard":self.overguard.current_value, "shield":self.shield.current_value\
@@ -250,7 +295,7 @@ class Unit:
         return vals
     
     def get_last_crit_info(self):
-        return f"Tier {self.damage_controller.critical_tier}, crit mult = {self.damage_controller.tiered_critical_multiplier:.3f}"
+        return f"Crit Tier {self.damage_controller.critical_tier}, Crit Mult = {self.damage_controller.tiered_critical_multiplier:.3f}"
     
     def apply_corrosive_armor_strip(self, proc_manager:pm.DefaultProcManager):
         armor_strip = const.CORROSIVE_ARMOR_STRIP[proc_manager.count]
@@ -258,7 +303,6 @@ class Unit:
 
     def apply_viral_debuff(self, proc_manager:pm.DefaultProcManager):
         debuff = const.VIRAL_DEBUFF[proc_manager.count]
-        self.health.debuffs["Viral debuff"] = debuff
         self.health.set_damage_multiplier("Viral debuff", debuff)
 
     def apply_magnetic_debuff(self, proc_manager:pm.DefaultProcManager):
@@ -306,7 +350,14 @@ class Protection:
             self.unit.set_armor_dr()
 
     def get_level_multiplier(self):
+        cdef float old_multiplier = 1
         scale_factor_list = const.protection_scale_factors[self.protection_type]
+        if self.unit.protection_scaling == const.OLD_PROTECTION_SCALING and "f_old" in scale_factor_list[0]:
+            selected_factors = scale_factor_list[0]
+            f_old = selected_factors["f_old"]
+            old_multiplier = <float>f_old[0] + <float>f_old[1]*(self.unit.level - self.unit.base_level)**<float>f_old[2]
+            return old_multiplier
+
         selected_factors = None
         for scale_factor in scale_factor_list:
             if scale_factor["is_eximus"] != self.unit.is_eximus:
@@ -375,15 +426,17 @@ class ProcController():
         self.viral_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_VIRAL'], count_change_callback=enemy.apply_viral_debuff)
         self.corrosive_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_CORROSIVE'], count_change_callback=enemy.apply_corrosive_armor_strip)
         self.void_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_RADIANT'])
+        self.knockdown_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_KNOCKDOWN'])
+        self.microwave_proc_manager = pm.DefaultProcManager(enemy, const.PT_INDEX['PT_MICROWAVE'])
 
         self.proc_managers: List[pm.DefaultProcManager] = [self.impact_proc_manager, self.puncture_proc_manager, self.slash_proc_manager,
                                 self.heat_proc_manager, self.cold_proc_manager, self.electric_proc_manager,
                                 self.toxin_proc_manager, self.blast_proc_manager, self.radiation_proc_manager,
                                 self.gas_proc_manager, self.magnetic_proc_manager, self.viral_proc_manager,
-                                self.corrosive_proc_manager, self.void_proc_manager]
+                                self.corrosive_proc_manager, self.void_proc_manager, self.knockdown_proc_manager, self.microwave_proc_manager]
 
-    def add_proc(self, proc_index:int, fire_mode:FireMode, status_damage: float):
-        self.proc_managers[proc_index].add_proc(fire_mode, status_damage)
+    def add_proc(self, proc_index:int, fire_mode:FireMode, status_damage: float, bodypart:str):
+        self.proc_managers[proc_index].add_proc(fire_mode, status_damage, bodypart)
 
     def reset(self):
         for pm in self.proc_managers:
@@ -457,8 +510,6 @@ class DamageController():
     def dynamic_dps_1(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
         cdef float dpt = np.sum(damage) * critical_multiplier * <float>fire_mode.multishot.modded
         self.enemy.last_t0_damage = np.sum(damage)
-        print(np.sum(damage * critical_multiplier), np.sum(damage) * critical_multiplier)
-        print(dpt)
 
         cdef float cap = 460e3
         cdef float dr = <float>1/(<float>1 + <float>(dpt/cap))
@@ -479,6 +530,7 @@ class DamageController():
         ## scale critical multiplier to the tier
         if critical_tier == 0:
             self.tiered_critical_multiplier = <float>1
+            self.unmodified_tiered_critical_multiplier = self.tiered_critical_multiplier
             return self.tiered_critical_multiplier
         
         cdef float tiered_critical_multiplier = (critical_multiplier-<float>1) * critical_tier + <float>1
@@ -492,6 +544,7 @@ class DamageController():
 
         if critical_tier == 0:
             self.tiered_critical_multiplier = <float>1
+            self.unmodified_tiered_critical_multiplier = self.tiered_critical_multiplier
             return self.tiered_critical_multiplier
 
         cdef float tier_1 = (critical_multiplier - <float>1) * <float>0.5 + <float>1
@@ -504,3 +557,12 @@ class DamageController():
         self.unmodified_tiered_critical_multiplier = unmodified_tiered_critical_multiplier
 
         return self.tiered_critical_multiplier 
+
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d

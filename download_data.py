@@ -16,7 +16,7 @@ def download_weapons(save_file=False):
     if "ExportUpgrades_en.json" not in endpoints:
         raise Exception("Failed to download ExportUpgrades_en.json")
     
-    weeklyRivensURL = 'https://n9e5v4d8.ssl.hwcdn.net/repos/weeklyRivensPC.json'
+    weeklyRivensURL = 'https://www-static.warframe.com/repos/weeklyRivensPC.json'
     upgradesURL = f'http://content.warframe.com/PublicExport/Manifest/{endpoints["ExportUpgrades_en.json"]}'
     exportWeaponsURL = f'http://content.warframe.com/PublicExport/Manifest/{endpoints["ExportWeapons_en.json"]}'
 
@@ -48,7 +48,7 @@ def download_weapons(save_file=False):
 
     # save to file
     with open(os.path.join(current_folder, "data", "ExportRivenUpgrades.json"), 'w') as fout:
-        json.dump(export_rivens, fout)
+        json.dump(export_rivens, fout, indent=4)
 
     # with open(os.path.join(current_folder, "data", "weeklyRivens.json"), 'w') as fout:
     #     json.dump(weeklyRivensData, fout)
@@ -89,7 +89,7 @@ def download_weapons(save_file=False):
 
     if save_file:
         with open(os.path.join(current_folder, "data", "ExportWeapons.json"), 'w') as fout:
-            json.dump(reformat_data, fout)
+            json.dump(reformat_data, fout, indent=4)
 
     return reformat_data
 
