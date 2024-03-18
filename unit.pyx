@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from random import random
+from random import random, randint
 import numpy as np
 from pathlib import Path
 import os
@@ -24,31 +24,7 @@ class Unit:
         self.protection_scaling = protection_scaling
         self.simulation = simulation
 
-        data = self.get_unit_data()
-        default_data = copy.deepcopy(const.DEFAULT_ENEMY_CONFIG)
-        unit_data = update(default_data, data)
-
-        self.base_level = unit_data.get("base_level", 1)
-        self.level = max(self.base_level, self.level)
-        self.faction:str = unit_data["faction"]
-        # self.type: str = unit_data["type"]
-        self.is_eximus:bool = unit_data.get("is_eximus", False)
-        self.procImmunities: np.array = np.array([1]*20, dtype=np.single)
-        self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
-        self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NORMAL")
-        self.base_dr = <float>unit_data.get("base_dr", 1)
-        self.health_vulnerability = <float>unit_data.get("health_vulnerability", 1)
-        self.shield_vulnerability = <float>unit_data.get("shield_vulnerability", 1)
-        self.proc_info = const.PROC_INFO.copy()
-        if 'proc_info' in unit_data:
-            self.proc_info = update(self.proc_info, unit_data['proc_info'])
-            # for k,v in unit_data['proc_info'].items():
-            #     self.proc_info[k] = v
-
-        self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
-        self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
-        self.shield = Protection(self, unit_data["base_shield"], "shield", unit_data["shield_type"])
-        self.overguard = Protection(self, unit_data["base_overguard"], "overguard", "Overguard")
+        self.update_data()
 
         self.proc_controller = ProcController(self)
         self.damage_controller = DamageController(self)
@@ -56,14 +32,6 @@ class Unit:
         if self.overguard.current_value > 0:
             self.proc_controller.cold_proc_manager.max_stacks = 4
             self.procImmunities[const.DT_INDEX['DT_RADIATION']] = 0
-
-        self.bodypart_multipliers = dict(body=dict(multiplier=1,critical_damage_multiplier=1), head=dict(multiplier=3,critical_damage_multiplier=2))
-        if 'bodypart_multipliers' in unit_data:
-            self.bodypart_multipliers = unit_data['bodypart_multipliers']
-
-        self.animation_multipliers = dict(normal=dict(multiplier=1,critical_damage_multiplier=1))
-        if 'animation_multipliers' in unit_data:
-            self.animation_multipliers = unit_data['animation_multipliers']
 
         # state
         self.current_animation = 'normal'
@@ -74,6 +42,38 @@ class Unit:
 
         self.last_damage = 0
         self.last_t0_damage = 0
+
+    def update_data(self):
+        data = self.get_unit_data()
+        default_data = copy.deepcopy(const.DEFAULT_ENEMY_CONFIG)
+        unit_data = update(default_data, data)
+
+        self.base_level = unit_data.get("base_level", 1)
+        self.level = max(self.base_level, self.level)
+        self.faction:str = unit_data["faction"]
+        self.is_eximus:bool = unit_data.get("is_eximus", False)
+        self.procImmunities: np.array = np.array([1]*20, dtype=np.single)
+        self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
+        self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NORMAL")
+        self.base_dr = <float>unit_data.get("base_dr", 1)
+        self.health_vulnerability = <float>unit_data.get("health_vulnerability", 1)
+        self.shield_vulnerability = <float>unit_data.get("shield_vulnerability", 1)
+        self.proc_info = copy.deepcopy(const.PROC_INFO)
+        if 'proc_info' in unit_data:
+            self.proc_info = update(self.proc_info, unit_data['proc_info'])
+
+        self.health = Protection(self, unit_data["base_health"], "health", unit_data["health_type"])
+        self.armor = Protection(self, unit_data["base_armor"], "armor", unit_data["armor_type"])
+        self.shield = Protection(self, unit_data["base_shield"], "shield", unit_data["shield_type"])
+        self.overguard = Protection(self, unit_data["base_overguard"], "overguard", "Overguard")
+
+        self.bodypart_multipliers = dict(body=dict(multiplier=1,critical_damage_multiplier=1), head=dict(multiplier=3,critical_damage_multiplier=2))
+        if 'bodypart_multipliers' in unit_data:
+            self.bodypart_multipliers = unit_data['bodypart_multipliers']
+
+        self.animation_multipliers = dict(normal=dict(multiplier=1,critical_damage_multiplier=1))
+        if 'animation_multipliers' in unit_data:
+            self.animation_multipliers = unit_data['animation_multipliers']
 
     def get_preview_info(self):
         info = [
@@ -107,7 +107,7 @@ class Unit:
     def get_unit_data(self) -> dict:
         with open(os.path.join(Path(__file__).parent.resolve(),"data", "unit_data.json")) as f:
             data = json.load(f)
-        return data[self.name]
+        return data.get(self.name, {})
     
     def reset(self):
         self.health.reset()
@@ -144,13 +144,18 @@ class Unit:
             
 
     def pellet_hit(self, fire_mode:FireMode, bodypart='body'):
+        cdef float multiplier = 1
         # calculate conditional multiplier
         if fire_mode.unique_proc_count != self.unique_proc_count and fire_mode.condition_overloaded:
             fire_mode.unique_proc_count = self.unique_proc_count
             fire_mode.calc_modded_damage()
 
-        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart)
-        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded, critical_multiplier=cd, bodypart=bodypart)
+        if fire_mode.weapon.special_m['devouring_attrition'] > 0 :
+            if self.damage_controller.critical_tier==0 and random() > 0.5:
+                multiplier *= 21
+
+        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart) 
+        enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded * multiplier, critical_multiplier=cd, bodypart=bodypart)
 
         cdef float status_damage_base = fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier
         self.apply_status(fire_mode, status_damage_base, bodypart)
@@ -265,18 +270,28 @@ class Unit:
     def apply_status(self, fire_mode:FireMode, status_damage: float, bodypart:str):
         total_status_chance = fire_mode.procChance.modded * fire_mode.weapon.procChance_m['multishot_multiplier']
         status_tier = int(total_status_chance) + int(random() < (total_status_chance) % 1)
+        status_procced = 0
 
         for _ in range(status_tier):
             roll = random()
             for i, effect_chance in enumerate(fire_mode.procProbabilities):
                 if roll < effect_chance:
                     self.proc_controller.add_proc(i, fire_mode, status_damage, bodypart)
+                    status_procced += 1
                     break
                 else:
                     roll -= effect_chance
-
+        
         for proc_index in fire_mode.forcedProc:
             self.proc_controller.add_proc(proc_index, fire_mode, status_damage, bodypart)
+            status_procced += 1
+
+        encumber_chance = fire_mode.weapon.special_m['encumber']
+        if status_procced>0 and fire_mode.weapon.last_encumber_time != self.simulation.time and encumber_chance > 0:
+            encumber_tier = int(encumber_chance) + int(random() < (encumber_chance) % 1)
+            for _ in range(encumber_tier):
+                self.proc_controller.add_proc(randint(3, 12), fire_mode, 1, bodypart)
+                fire_mode.weapon.last_encumber_time = self.simulation.time
     
     def get_current_stats(self):
         vals = {"time":self.simulation.time, "overguard":self.overguard.current_value, "shield":self.shield.current_value\
@@ -325,6 +340,7 @@ class Protection:
         self.current_value = self.max_value
 
         self.bonus = <float>1
+        self.mission_multipliers: dict = {} # corrosive, heat armor strip
         self.value_multipliers: dict = {} # corrosive, heat armor strip
         self.damage_multipliers: dict = {} # viral / magnetic status
         self.total_damage_multiplier = <float>1
@@ -332,7 +348,7 @@ class Protection:
     def reset(self):
         self.modified_base = self.base
         self.max_value = (self.base * self.level_multiplier * self.bonus)
-        self.current_value = self.max_value
+        self.current_value = self.max_value * math.prod([<float>f for f in self.mission_multipliers.values()])
         self.value_multipliers = {}
         self.damage_multipliers = {}
         self.total_damage_multiplier = <float>1
@@ -389,6 +405,21 @@ class Protection:
         cdef float res = (f1*(<float>1-s)+f2*s) * bonus
         
         return res
+    
+    def set_mission_multiplier(self, name, value):
+        # self.mission_multipliers[name] = <float>value
+        # self.current_value = <float>math.prod([<float>f for f in self.mission_multipliers.values()])
+
+        if self.current_value <= 0:
+            self.mission_multipliers[name] = value
+            return
+        cdef float old_affliction = math.prod([<float>f for f in self.mission_multipliers.values()])
+        self.mission_multipliers[name] = <float>value
+        cdef float new_affliction = math.prod([<float>f for f in self.mission_multipliers.values()])
+        self.current_value = <float>(new_affliction * (self.current_value / old_affliction))
+
+        if self.protection_type == 'armor':
+            self.unit.set_armor_dr()
     
     def set_value_multiplier(self, name, value):
         if self.current_value <= 0:

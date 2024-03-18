@@ -187,9 +187,8 @@ class ContainerizedProcManager:
 
         # If multiple procs happen at the same time, add them to the same container
         previous_container = self.container_list[(self.container_index-1) % 10]
-        if len(previous_container.proc_dq) > 0 and previous_container.proc_dq[-1].offset == self.simulation.time:
+        if len(previous_container.proc_dq) > 0 and (abs(previous_container.proc_dq[-1].offset - self.simulation.time) < 1/120):
             # add it to same container as last proc
-            
             previous_container.add_proc(new_proc)
         else:
             # add to next container and increment container index

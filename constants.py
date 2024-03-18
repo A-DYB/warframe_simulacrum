@@ -284,15 +284,9 @@ rivenType_types = ['Pistol Riven Mod', 'Melee Riven Mod', 'Rifle Riven Mod', 'Sh
 noise_types = ['ALARMING', 'SILENT']
 trigger_types = ['SEMI', 'AUTO', 'BURST', 'ACTIVE', 'CHARGE', 'DUPLEX', 'HELD', 'Auto Burst']
 
-DEFAULT_WEAPON_CONFIG = {
-        "name": "Lato",
-        "productCategory": "Pistols",
-        "omegaAttenuation": 1.,
-        "rivenType": "Pistol Riven Mod",
-        "fireModes": {
-            "default": {
+DEFAULT_FIRE_MODE = {
                 "damagePerShot": [
-                    1.,
+                    0.,
                     0.,
                     0.,
                     0.,
@@ -327,15 +321,22 @@ DEFAULT_WEAPON_CONFIG = {
                 "ammoCost": 1.,
                 "chargeTime": 0.,
                 "embedDelay": 0.,
-                "forcedProc": [2],
+                "radial": False,
+                "forcedProc": [],
                 "secondaryEffects": {}
             }
-        }
+
+DEFAULT_WEAPON_CONFIG = {
+        "name": "Lato",
+        "productCategory": "Pistols",
+        "omegaAttenuation": 1.,
+        "rivenType": "Pistol Riven Mod",
+        "fireModes": {}
     }
 
 DEFAULT_FIRE_MODE_EFFECT = {
     "damagePerShot": [
-        1.,
+        0.,
         0.,
         0.,
         0.,
@@ -363,7 +364,8 @@ DEFAULT_FIRE_MODE_EFFECT = {
     "procChance": 0.,
     "multishot": 1,
     "embedDelay": 0.,
-    "forcedProc": [2]
+    "radial": False,
+    "forcedProc": []
 
 }
 

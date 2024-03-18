@@ -11,9 +11,11 @@ import numpy as np
 from scipy.optimize import curve_fit
 import os
 import warframe_simulacrum.constants
+import warframe_simulacrum.procs
 from matplotlib.offsetbox import (AnchoredOffsetbox, DrawingArea, HPacker,
                                   TextArea)
 from matplotlib import colors
+from PySide6.QtWidgets import QApplication
 
 class Simulacrum:
     def __init__(self, figure, axes) -> None:
@@ -25,6 +27,7 @@ class Simulacrum:
         self.anchored_box = None
         self.fig = figure
         self.ax = axes
+        self.static = True
         self.df:pd.DataFrame = pd.DataFrame([])
         cid1 = self.fig.canvas.mpl_connect('button_press_event', lambda event: self.onclick(event, self.df))
 
@@ -40,6 +43,7 @@ class Simulacrum:
         
     def run_simulation(self, enemies:List[Unit], fire_mode:FireMode, primer:FireMode=None):
         self.reset()
+        fire_mode.reset()
         for enemy in enemies:
             enemy.reset()
         if primer and len(primer.forcedProc)>0:
@@ -50,7 +54,6 @@ class Simulacrum:
         stats['name'] = ""
         stats['event_index'] = -1
         data = [stats]
-
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
         heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
         for enemy in enemies:
@@ -88,7 +91,26 @@ class Simulacrum:
                 
                 if self.time > 20 :
                     break
+        return data
+    
+    def run_single_simulation(self, enemies:List[Unit], fire_mode:FireMode, primer:FireMode=None):
+        data = self.run_simulation(enemies, fire_mode, primer)
+        self.plot_simulation(data, enemies[0])
 
+    def run_multi_simulation(self, plot_window, enemies:List[Unit], fire_mode:FireMode, primer:FireMode=None, runs=10):
+        for run in range(runs):
+            data = self.run_simulation(enemies, fire_mode, primer)
+            self.plot_continuous(data, enemies[0])
+            plot_window.canvas.draw()
+            self.fig.canvas.draw()
+            plot_window.show()
+            QApplication.processEvents()
+        self.ax.legend(self.df['variable'].unique(), loc='center left', bbox_to_anchor=(1, 0.5))
+    
+    def plot_simulation(self, data, enemy, clear=True):
+        self.static = True
+        self.ax.cla()
+            
         df = pd.DataFrame(data)
         df_melt = pd.melt(df, id_vars=["time", "event_index", "name"], var_name="variable", value_name="value")
         df_melt = df_melt.drop_duplicates(subset=["variable", "value"])
@@ -97,22 +119,53 @@ class Simulacrum:
         names = [key for key,value in stats.items() if value > 0 ]
         self.df = df_melt[(df_melt["variable"].isin(names))].copy()
 
-        # self.fig, self.ax = plt.subplots()
-        # cid12 = self.fig.canvas.mpl_connect('button_release_event', self.offclick) 
-
         # plot the data using seaborn
         sns.lineplot(data=self.df, x="time", y="value", hue="variable", marker="x", estimator=None, errorbar=None, markeredgecolor='black', drawstyle='steps-post', ax=self.ax)
         self.ax.set_ylim(bottom=0)
         self.ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
         box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
-        self.anchored_box = AnchoredOffsetbox(loc='lower left',
-                                 child=box1, pad=0.4,
-                                 frameon=True,
-                                 bbox_to_anchor=(0., 1.02),
-                                 bbox_transform=self.ax.transAxes,
-                                 borderpad=0.,)
+        self.anchored_box = AnchoredOffsetbox(loc='lower right',
+                                child=box1, pad=0.4,
+                                frameon=True,
+                                bbox_to_anchor=(1., 1.02),
+                                bbox_transform=self.ax.transAxes,
+                                borderpad=0.,)
         self.ax.add_artist(self.anchored_box) 
+
+        self.fig.tight_layout()
+    
+    def plot_continuous(self, data, enemy):
+        cleared = False
+        if self.static:
+            self.static = False
+            cleared = True
+            self.ax.cla()
+
+            box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
+            self.anchored_box = AnchoredOffsetbox(loc='lower right',
+                                    child=box1, pad=0.4,
+                                    frameon=True,
+                                    bbox_to_anchor=(1., 1.02),
+                                    bbox_transform=self.ax.transAxes,
+                                    borderpad=0.,)
+            self.ax.add_artist(self.anchored_box) 
+            
+        df = pd.DataFrame(data)
+        df_melt = pd.melt(df, id_vars=["time", "event_index", "name"], var_name="variable", value_name="value")
+        df_melt = df_melt.drop_duplicates(subset=["variable", "value"])
+
+        stats = enemy.get_stats()
+        names = [key for key,value in stats.items() if value > 0 ]
+        df = df_melt[(df_melt["variable"].isin(names))].copy()
+        # self.df = df.copy()
+        self.df = pd.concat([self.df, df.copy()])
+
+        # plot the data using seaborn
+        # sns.scatterplot(data=self.df, x="time", y="value", hue="variable", alpha=0.5, ax=self.ax)
+        sns.lineplot(data=df, x="time", y="value", hue="variable", alpha=0.5, estimator=None, errorbar=None, drawstyle='steps-post', ax=self.ax, legend=False)
+
+        self.ax.set_ylim(bottom=0)
 
         self.fig.tight_layout()
 

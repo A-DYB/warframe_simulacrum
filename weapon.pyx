@@ -7,6 +7,8 @@ import json
 import re
 import warframe_simulacrum.constants as const
 import heapq
+import copy
+import collections.abc
 
 from random import random
 from typing import List, TYPE_CHECKING
@@ -22,6 +24,15 @@ class Weapon():
         self.ui = ui
         self.simulation = simulation
         self.data = self.get_weapon_data()
+        # default_data = copy.deepcopy(const.DEFAULT_WEAPON_CONFIG)
+        # self.data = update(default_data, data)
+
+        # default_fm = copy.deepcopy(const.DEFAULT_FIRE_MODE)
+        # if len(self.data.get('fireModes', {})) == 0:
+        #     self.data['fireModes'] = {'default':copy.deepcopy(const.DEFAULT_FIRE_MODE)}
+        # for k, fm in self.data.get('fireModes', {}).items():
+        #     self.data['fireModes'][k] = update(copy.deepcopy(const.DEFAULT_FIRE_MODE), fm)
+
         self.riven_type = self.data.get("rivenType", "")
         self.fire_modes:dict = {f'{name}':FireMode(self, name) for name in self.data.get("fireModes", {})}
 
@@ -58,6 +69,10 @@ class Weapon():
         self.factionDamage_m = {"base":0}
         self.ammoCost_m = {"base":0, "energized_munitions":0}
 
+        self.special_m = {"encumber":0, "devouring_attrition":0}
+
+        self.last_encumber_time = 0
+
     
     def get_weapon_data(self):
         current_folder = Path(__file__).parent.resolve()
@@ -66,53 +81,40 @@ class Weapon():
 
         return weapon_data.get(self.name, {})
     
+    def update_data(self):
+        current_folder = Path(__file__).parent.resolve()
+        with open(os.path.join(current_folder, "data", "ExportWeapons.json"), 'r') as f:
+            weapon_data = json.load(f)
+        self.data = weapon_data.get(self.name, {})
+        # default_data = copy.deepcopy(const.DEFAULT_WEAPON_CONFIG)
+        # self.data = update(default_data, data)
+
+        # # default_fm = copy.deepcopy(const.DEFAULT_FIRE_MODE)
+        # if len(self.data.get('fireModes', {})) == 0:
+        #     self.data['fireModes'] = {'default':copy.deepcopy(const.DEFAULT_FIRE_MODE)}
+        # for k, fm in self.data.get('fireModes', {}).items():
+        #     self.data['fireModes'][k] = update(copy.deepcopy(const.DEFAULT_FIRE_MODE), fm)
+    
+        self.riven_type = self.data.get("rivenType", "")
+        self.fire_modes:dict = {f'{name}':FireMode(self, name) for name in self.data.get("fireModes", {})}
+        self.apply_mods()
+    
     def reset(self):
         for fire_mode in self.fire_modes:
             self.fire_modes[fire_mode].reset()
 
     def get_mod_dict(self):
-        mods = dict(damagePerShot_m=self.damagePerShot_m, multishot_m=self.multishot_m, criticalChance_m=self.criticalChance_m, 
-                    criticalMultiplier_m=self.criticalMultiplier_m, factionDamage_m=self.factionDamage_m, 
-                    procChance_m=self.procChance_m, fireRate_m=self.fireRate_m, 
-                    heat_m=self.heat_m, cold_m=self.cold_m, electric_m=self.electric_m, toxin_m=self.toxin_m, 
-                    blast_m=self.blast_m, radiation_m=self.radiation_m, gas_m=self.gas_m, 
-                    magnetic_m=self.magnetic_m, viral_m=self.viral_m, corrosive_m=self.corrosive_m, 
-                    impact_m=self.impact_m, puncture_m=self.puncture_m, slash_m=self.slash_m, magazineSize_m=self.magazineSize_m, 
-                    statusDuration_m=self.statusDuration_m, reloadTime_m=self.reloadTime_m, ammoCost_m=self.ammoCost_m, 
-                    combineElemental_m=self.combineElemental_m)
-        return mods
+        return {attr: value for attr, value in vars(self).items() if attr.endswith('_m')}
 
     def load_mod_config(self, mods:dict):
-        if "combineElemental_m" in mods:
-            self.combineElemental_m = mods.get("combineElemental_m", {"indices":[]})
+        for attr, value in vars(self).items():
+            if not attr.endswith('_m'):
+                continue
 
-        self.damagePerShot_m.update(mods.get("damagePerShot_m", {}) )
-        self.criticalChance_m.update(mods.get("criticalChance_m", {})  )
-        self.criticalMultiplier_m.update(mods.get("criticalMultiplier_m", {})  )
-        self.procChance_m.update(mods.get("procChance_m", {})  )
-        self.magazineSize_m.update(mods.get("magazineSize_m", {})  )
-        self.fireRate_m.update(mods.get("fireRate_m", {})  )
-        self.reloadTime_m.update(mods.get("reloadTime_m", {})  )
-        self.multishot_m.update(mods.get("multishot_m", {})  )
-        self.heat_m.update(mods.get("heat_m", {})  )
-        self.cold_m.update(mods.get("cold_m", {})  )
-        self.electric_m.update(mods.get("electric_m", {})  )
-        self.toxin_m.update(mods.get("toxin_m", {})  )
-        self.blast_m.update(mods.get("blast_m", {})  )
-        self.radiation_m.update(mods.get("radiation_m", {})  )
-        self.gas_m.update(mods.get("gas_m", {})  )
-        self.magnetic_m.update(mods.get("magnetic_m", {})  )
-        self.viral_m.update(mods.get("viral_m", {})  )
-        self.corrosive_m.update(mods.get("corrosive_m", {})  )
+            if isinstance(getattr(self, attr), dict):
+                getattr(self, attr).update( mods.get(attr, {}) )
 
-        self.impact_m.update(mods.get("impact_m", {})  )
-        self.puncture_m.update(mods.get("puncture_m", {})  )
-        self.slash_m.update(mods.get("slash_m", {})  )
-
-        self.statusDuration_m.update(mods.get("statusDuration_m", {})  )
-        self.factionDamage_m.update(mods.get("factionDamage_m", {})  )
-        self.ammoCost_m.update(mods.get("ammoCost_m", {})  )
-
+        self.combineElemental_m = mods.get("combineElemental_m", {"indices":[]})
         self.apply_mods()
     
     def apply_mods(self):
@@ -152,7 +154,7 @@ class FireMode():
 
         self.forcedProc = self.data.get("forcedProc", []) # indices corresponding to proc that will be forced
 
-        self.radial = False
+        self.radial = self.data.get("radial", False)
         self.unique_proc_count = 0
         self.condition_overloaded = False
         self.multishot_damage = <float>0
@@ -205,6 +207,7 @@ class FireMode():
         self.ammoCost.reset()
         self.chargeTime.reset()
         self.embedDelay.reset()
+        self.forcedProc = self.data.get("forcedProc", [])
 
         self.apply_mods()
 
@@ -329,6 +332,7 @@ class FireMode():
         multishot = multishot_roll
 
         self.magazineSize.current -= self.ammoCost.modded
+        # print(self.magazineSize.current)
 
         if self.trigger == "HELD":
             self.weapon.damagePerShot_m["multishot_multiplier"] = multishot_roll
@@ -343,7 +347,7 @@ class FireMode():
             heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=self, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
 
             for fme in self.fire_mode_effects.values():
-                fme_time = fme.embedDelay.modded + fm_time
+                fme_time = fme.embedDelay.modded + fm_time + 1e-4
                 heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name=f"{fme.name} hit", fire_mode=fme, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
 
 
@@ -384,6 +388,7 @@ class FireModeEffect(FireMode):
         self.multishot = Parameter( self.data.get("multishot", <float>1) )
         self.embedDelay = Parameter( self.data.get("embedDelay", <float>0) )
         self.forcedProc = self.data.get("forcedProc", [])
+        self.radial = self.data.get("radial", False)
 
         # self.fire_mode_effects:List[FireModeEffect] = []
         self.fire_mode_effects:dict = {}
@@ -463,3 +468,11 @@ def parse_text(text, combine_rule=const.COMBINE_ADD, parse_rule=const.BASE_RULE)
         else:
             return 1
     return None
+
+def update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.abc.Mapping):
+            d[k] = update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d

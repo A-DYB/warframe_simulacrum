@@ -770,5 +770,126 @@
         "is_eximus": false,
         "health_vulnerability": 1.0,
         "shield_vulnerability": 1.0
+    },
+    "tst": {
+        "base_health": 350,
+        "base_armor": 50,
+        "base_shield": 200,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 0.375,
+        "shield_vulnerability": 1.5,
+        "health_type": "Flesh",
+        "armor_type": "Ferrite",
+        "shield_type": "Shield",
+        "damage_controller_type": "DC_NORMAL",
+        "critical_controller_type": "CC_1",
+        "faction": "Stalker",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
     }
 }
