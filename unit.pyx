@@ -53,8 +53,8 @@ class Unit:
         self.faction:str = unit_data["faction"]
         self.is_eximus:bool = unit_data.get("is_eximus", False)
         self.procImmunities: np.array = np.array([1]*20, dtype=np.single)
-        self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NORMAL")
-        self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NORMAL")
+        self.damage_controller_type = unit_data.get("damage_controller_type", "DC_NONE")
+        self.critical_controller_type = unit_data.get("critical_controller_type", "CC_NONE")
         self.base_dr = <float>unit_data.get("base_dr", 1)
         self.health_vulnerability = <float>unit_data.get("health_vulnerability", 1)
         self.shield_vulnerability = <float>unit_data.get("shield_vulnerability", 1)
@@ -75,6 +75,8 @@ class Unit:
         if 'animation_multipliers' in unit_data:
             self.animation_multipliers = unit_data['animation_multipliers']
 
+        self.controller_value = <float>unit_data.get("controller_value", 0)
+
     def get_preview_info(self):
         info = [
             ("Enemy", self.name.capitalize(), ''),
@@ -82,8 +84,8 @@ class Unit:
             ("Faction", self.faction.capitalize(), ''),
         ]
         info1 = []
-        if self.damage_controller_type != 'DC_NORMAL': info1.append(("Damage Controller", self.damage_controller_type, '')) 
-        if self.critical_controller_type != 'CC_NORMAL': info1.append(("Critical Controller", self.critical_controller_type, ''))
+        if self.damage_controller_type != 'DC_NONE': info1.append(("Damage Controller", self.damage_controller_type, '')) 
+        if self.critical_controller_type != 'CC_NONE': info1.append(("Critical Controller", self.critical_controller_type, ''))
         if len(info1)>0: 
             info.append(("Category", "", '')) 
             info += info1
@@ -150,11 +152,12 @@ class Unit:
             fire_mode.unique_proc_count = self.unique_proc_count
             fire_mode.calc_modded_damage()
 
-        if fire_mode.weapon.special_m['devouring_attrition'] > 0 :
-            if self.damage_controller.critical_tier==0 and random() > 0.5:
+        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart) 
+
+        if fire_mode.weapon.special_m['attrition_chance'] > 0 :
+            if self.damage_controller.critical_tier==0 and random() > fire_mode.weapon.special_m['attrition_chance']:
                 multiplier *= 21
 
-        cdef float cd = self.get_critical_multiplier(fire_mode, bodypart) 
         enemy_multiplier = self.apply_damage(fire_mode, fire_mode.damagePerShot.modded * multiplier, critical_multiplier=cd, bodypart=bodypart)
 
         cdef float status_damage_base = fire_mode.totalDamage.modded * enemy_multiplier * self.damage_controller.unmodified_tiered_critical_multiplier
@@ -286,7 +289,7 @@ class Unit:
             self.proc_controller.add_proc(proc_index, fire_mode, status_damage, bodypart)
             status_procced += 1
 
-        encumber_chance = fire_mode.weapon.special_m['encumber']
+        encumber_chance = fire_mode.weapon.special_m['encumber_chance']
         if status_procced>0 and fire_mode.weapon.last_encumber_time != self.simulation.time and encumber_chance > 0:
             encumber_tier = int(encumber_chance) + int(random() < (encumber_chance) % 1)
             for _ in range(encumber_tier):
@@ -476,8 +479,8 @@ class ProcController():
 class DamageController():
     def __init__(self, enemy: Unit) -> None:
         self.enemy = enemy
-        self.name_controller = {"DC_NORMAL":self.normal, "DC_STATIC_DPS_1":self.static_dps_1, "DC_STATIC_DPS_2":self.static_dps_2, "DC_DYNAMIC_DPS_1":self.dynamic_dps_1, "DC_DYNAMIC_DPS_2":self.dynamic_dps_2}
-        self.name_crit_controller = {"CC_NORMAL":self.crit_controller_0, "CC_1":self.crit_controller_1}
+        self.name_controller = {"DC_NONE":self.normal, "DC_STATIC_DPS_DEMOLISHER":self.static_dps_demolisher, "DC_STATIC_DPS_ACOLYTE":self.static_dps_acolyte, "DC_DYNAMIC_DPS_ARCHON":self.dynamic_dps_archon, "DC_DYNAMIC_DPS_FRAGMENTED":self.dynamic_dps_fragmented, "DC_DYNAMIC_DPS_NECRAMITE":self.dynamic_dps_necramite}
+        self.name_crit_controller = {"CC_NONE":self.crit_controller_none, "CC_ACOLYTE":self.crit_controller_acolyte}
         self.func = self.name_controller[enemy.damage_controller_type]
         self.cc_func = self.name_crit_controller[enemy.critical_controller_type]
         self.critical_multiplier = <float>1
@@ -490,7 +493,7 @@ class DamageController():
         self.enemy.last_t0_damage = np.sum(damage)
         return <float>1
 
-    def static_dps_1(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
+    def static_dps_demolisher(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
         cdef float tier_min = (<float>1-<float>1/max(1,self.critical_tier))
         cdef float dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + <float>1)
 
@@ -516,7 +519,7 @@ class DamageController():
             dr = <float>0.1+<float>5950/tier0_dps
         return dr
     
-    def static_dps_2(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
+    def static_dps_acolyte(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
         cdef float tier_min = (<float>1-<float>1/max(1,self.critical_tier))
         cdef float dps_reducer = (tier_min/(self.critical_multiplier-tier_min) + <float>1)
 
@@ -538,7 +541,7 @@ class DamageController():
             dr = <float>14600/tier0_dps
         return dr
     
-    def dynamic_dps_1(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
+    def dynamic_dps_archon(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
         cdef float dpt = np.sum(damage) * critical_multiplier * <float>fire_mode.multishot.modded
         self.enemy.last_t0_damage = np.sum(damage)
 
@@ -546,7 +549,7 @@ class DamageController():
         cdef float dr = <float>1/(<float>1 + <float>(dpt/cap))
         return dr
     
-    def dynamic_dps_2(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
+    def dynamic_dps_fragmented(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
         cdef float dpt = np.sum(damage * <float>fire_mode.multishot.modded * critical_multiplier)
         self.enemy.last_t0_damage = np.sum(damage)
 
@@ -554,7 +557,15 @@ class DamageController():
         cdef float dr = <float>1/(<float>1+(dpt)/cap)
         return dr
     
-    def crit_controller_0(self, critical_multiplier, critical_tier):
+    def dynamic_dps_necramite(self, fire_mode: FireMode, damage: np.array, critical_multiplier:float):
+        cdef float dpt = np.sum(damage * <float>fire_mode.multishot.modded * critical_multiplier)
+        self.enemy.last_t0_damage = np.sum(damage)
+
+        cdef float cap = self.enemy.controller_value
+        cdef float dr = <float>1/(<float>1+(dpt)/cap)
+        return dr
+    
+    def crit_controller_none(self, critical_multiplier, critical_tier):
         self.critical_tier = critical_tier
         self.critical_multiplier = critical_multiplier
 
@@ -569,7 +580,7 @@ class DamageController():
         self.unmodified_tiered_critical_multiplier = self.tiered_critical_multiplier
         return self.tiered_critical_multiplier
     
-    def crit_controller_1(self, critical_multiplier, critical_tier):
+    def crit_controller_acolyte(self, critical_multiplier, critical_tier):
         self.critical_tier = critical_tier
         self.critical_multiplier = critical_multiplier
 

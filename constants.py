@@ -58,8 +58,8 @@ armor_types = ["None", 'Ferrite', 'Alloy', 'Infested Sinew', 'Tenno Armor']
 health_types = ['Infested', 'Robotic', 'Cloned Flesh', 'Infested Flesh', 'Flesh', 'Fossilized', 'Machinery', 'Indifferent Facade', 'Tenno Health']
 shield_types = ["None", 'Tenno Shield', 'Proto Shield', 'Shield', 'Eidolon Shield']
 overguard_types = ["None", 'Overguard']
-damage_controller_types = ["DC_NORMAL", "DC_STATIC_DPS_1", "DC_STATIC_DPS_2", "DC_DYNAMIC_DPS_1", "DC_DYNAMIC_DPS_2"]
-critical_controller_types = ["CC_NORMAL", "CC_1"]
+damage_controller_types = ["DC_NONE", "DC_STATIC_DPS_DEMOLISHER", "DC_STATIC_DPS_ACOLYTE", "DC_DYNAMIC_DPS_ARCHON", "DC_DYNAMIC_DPS_FRAGMENTED", "DC_DYNAMIC_DPS_NECRAMITE"]
+critical_controller_types = ["CC_NONE", "CC_ACOLYTE"]
 
 DT_INDEX = {"DT_IMPACT":0, "DT_PUNCTURE":1, "DT_SLASH":2, "DT_HEAT":3,
             "DT_COLD":4,"DT_ELECTRIC":5,"DT_TOXIN":6,"DT_BLAST":7,
@@ -167,8 +167,8 @@ DEFAULT_ENEMY_CONFIG = {
         "health_type": "Flesh",
         "armor_type": "None",
         "shield_type": "None",
-        "damage_controller_type": "DC_NORMAL", 
-        "critical_controller_type": "CC_NORMAL",
+        "damage_controller_type": "DC_NONE", 
+        "critical_controller_type": "CC_NONE",
         "faction": "Tenno",
         "base_overguard": 0,
         "is_eximus": False,

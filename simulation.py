@@ -17,8 +17,92 @@ from matplotlib.offsetbox import (AnchoredOffsetbox, DrawingArea, HPacker,
 from matplotlib import colors
 from PySide6.QtWidgets import QApplication
 
+class Simulacrums():
+    def __init__(self) -> None:
+        self.sim = Simulation()
+        self.results = []
+
+
+
+class Simulation():
+    def __init__(self) -> None:
+        self.event_queue:"heapq[Tuple[int, int, EventTrigger]]" = []
+        self.time = 0
+        self.call_index = 0
+        self.event_index = 0
+        self.records = []
+        self.kill_times = []
+
+        self.prev_time = 0
+        self.prev_time_adj = 0
+    
+    def reset(self):
+        self.event_queue = []
+        self.time = 0
+        self.call_index = 0
+        self.event_index = 0
+
+        self.prev_time = 0
+        self.prev_time_adj = 0
+
+    def clear_records(self):
+        self.records = []
+        self.kill_times = []
+
+    def consume_call_index(self):
+        idx = self.call_index
+        self.call_index += 1
+        return idx
+    
+    def adjust_event_time(self):
+        adj_time = self.time
+        # if current time is equal to previous time, we should adjust it so that it displays properly
+        if self.time == self.prev_time:
+            # adjust current time by the accumulated offset plus another small offset
+            adj_time = self.time + abs(self.prev_time_adj - self.prev_time) + 1e-6
+        # current time is new previous time
+        self.prev_time = self.time
+
+        self.prev_time_adj = adj_time
+        return adj_time
+    
+    def run(self, enemy, fire_mode, primer, sim_index, keep_records=True):
+        self.reset()
+        fire_mode.reset()
+        enemy.reset()
+        
+        # initial state
+        if keep_records:
+            stats = enemy.get_current_stats()
+            stats.update(dict(time=0, name='', info='', event_index=-1, sim_index=sim_index))
+            self.records.append(stats)
+        # set up first event
+        event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded + 1e-6
+        heapq.heappush(self.event_queue, (event_time, self.consume_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemy)))
+
+        if primer and len(primer.forcedProc)>0:
+            enemy.pellet_hit(primer, fire_mode.target_bodypart)
+
+        while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
+            self.time, call_index, event = heapq.heappop(self.event_queue)
+            event.func(**event.kwargs)
+
+            if keep_records and stats_changed(self.records[-1], enemy):
+                stats = enemy.get_current_stats()
+                stats.update(dict(time=self.adjust_event_time(), name=event.name, info='', event_index=self.event_index, sim_index=sim_index))
+                if event.info_callback is not None:
+                    stats["info"] = f"{event.info_callback()}"
+
+                self.records.append(stats)
+            
+            self.event_index += 1
+            
+            if self.time > 20 :
+                return
+        self.kill_times.append(self.time)
+
 class Simulacrum:
-    def __init__(self, figure, axes) -> None:
+    def __init__(self, figure, ax1, ax2) -> None:
         self.event_queue:"heapq[Tuple[int, int, EventTrigger]]" = []
         self.time = 0
         self.call_index = 0
@@ -26,17 +110,20 @@ class Simulacrum:
         self.plot_text = None
         self.anchored_box = None
         self.fig = figure
-        self.ax = axes
+        self.ax = ax1
+        self.ax2 = ax2
         self.static = True
         self.df:pd.DataFrame = pd.DataFrame([])
         cid1 = self.fig.canvas.mpl_connect('button_press_event', lambda event: self.onclick(event, self.df))
+        self.sim_index = 0
+        self.kill_times = []
 
     def reset(self):
         self.time = 0
         self.call_index = 0
         self.event_queue = []
 
-    def get_call_index(self):
+    def consume_call_index(self):
         idx = self.call_index
         self.call_index += 1
         return idx
@@ -46,17 +133,20 @@ class Simulacrum:
         fire_mode.reset()
         for enemy in enemies:
             enemy.reset()
-        if primer and len(primer.forcedProc)>0:
-            enemy.pellet_hit(primer, fire_mode.target_bodypart)
+        
         stats = enemies[0].get_current_stats()
 
         stats['time'] = stats['time'] - 1e-6
         stats['name'] = ""
+        stats['info'] = ""
         stats['event_index'] = -1
         data = [stats]
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
+        heapq.heappush(self.event_queue, (event_time, self.consume_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
         for enemy in enemies:
+            if primer and len(primer.forcedProc)>0:
+                enemy.pellet_hit(primer, fire_mode.target_bodypart)
+
             prev_time = 0
             prev_time_adj = 0
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
@@ -68,6 +158,7 @@ class Simulacrum:
                     sts = enemy.get_current_stats()
                     sts['event_index'] = self.event_index
                     sts["name"] = event.name
+                    sts["sim_index"] = self.sim_index
 
                     # reset
                     adj_time = sts["time"]
@@ -84,20 +175,38 @@ class Simulacrum:
                     prev_time_adj = adj_time
 
                     if event.info_callback is not None:
-                        sts["name"] += f", {event.info_callback()}"
+                        sts["info"] = f"{event.info_callback()}"
                     data.append(sts)
                 
                 self.event_index += 1
                 
                 if self.time > 20 :
                     break
+        if self.time < 20:
+            self.kill_times.append(self.time)
         return data
     
     def run_single_simulation(self, enemies:List[Unit], fire_mode:FireMode, primer:FireMode=None):
+        self.kill_times = []
+        self.df = pd.DataFrame([])
         data = self.run_simulation(enemies, fire_mode, primer)
         self.plot_simulation(data, enemies[0])
 
     def run_multi_simulation(self, plot_window, enemies:List[Unit], fire_mode:FireMode, primer:FireMode=None, runs=10):
+        self.kill_times = []
+
+        self.df = pd.DataFrame([])
+
+        self.ax.cla()
+        box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
+        self.anchored_box = AnchoredOffsetbox(loc='lower right',
+                                child=box1, pad=0.4,
+                                frameon=True,
+                                bbox_to_anchor=(1., 1.02),
+                                bbox_transform=self.ax.transAxes,
+                                borderpad=0.,)
+        self.ax.add_artist(self.anchored_box) 
+
         for run in range(runs):
             data = self.run_simulation(enemies, fire_mode, primer)
             self.plot_continuous(data, enemies[0])
@@ -105,11 +214,23 @@ class Simulacrum:
             self.fig.canvas.draw()
             plot_window.show()
             QApplication.processEvents()
+            self.sim_index += 1
         self.ax.legend(self.df['variable'].unique(), loc='center left', bbox_to_anchor=(1, 0.5))
+        # self.ax.legend([key for key,value in enemies[0].get_stats().items() if value > 0 ], loc='center left', bbox_to_anchor=(1, 0.5))
+        # self.ax.legend(handles=[self.artist], loc='center left', bbox_to_anchor=(1, 0.5))
+        # self.ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+            
+        # handles, labels = self.ax.get_legend_handles_labels()
+        # unique_labels = list(set(labels))
+        # self.ax.legend(handles, unique_labels, loc='center left', bbox_to_anchor=(1, 0.5))
+
+        # self.ax.set_ylim(bottom=0)
+        # self.fig.tight_layout()
     
     def plot_simulation(self, data, enemy, clear=True):
         self.static = True
         self.ax.cla()
+        self.ax2.cla()
             
         df = pd.DataFrame(data)
         df_melt = pd.melt(df, id_vars=["time", "event_index", "name"], var_name="variable", value_name="value")
@@ -121,7 +242,7 @@ class Simulacrum:
 
         # plot the data using seaborn
         sns.lineplot(data=self.df, x="time", y="value", hue="variable", marker="x", estimator=None, errorbar=None, markeredgecolor='black', drawstyle='steps-post', ax=self.ax)
-        self.ax.set_ylim(bottom=0)
+
         self.ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 
         box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
@@ -133,27 +254,51 @@ class Simulacrum:
                                 borderpad=0.,)
         self.ax.add_artist(self.anchored_box) 
 
+        sns.histplot(data=dict(kill_times=self.kill_times), x='kill_times', ax=self.ax2)
+
         self.fig.tight_layout()
     
     def plot_continuous(self, data, enemy):
-        cleared = False
-        if self.static:
-            self.static = False
-            cleared = True
-            self.ax.cla()
+        # cleared = False
+        # if self.static:
+        #     self.static = False
+        #     cleared = True
+        #     self.ax.cla()
 
-            box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
-            self.anchored_box = AnchoredOffsetbox(loc='lower right',
-                                    child=box1, pad=0.4,
-                                    frameon=True,
-                                    bbox_to_anchor=(1., 1.02),
-                                    bbox_transform=self.ax.transAxes,
-                                    borderpad=0.,)
-            self.ax.add_artist(self.anchored_box) 
+        #     box1 = TextArea("\nClick on point to see more info.\n", textprops=dict(color="k"))
+        #     self.anchored_box = AnchoredOffsetbox(loc='lower right',
+        #                             child=box1, pad=0.4,
+        #                             frameon=True,
+        #                             bbox_to_anchor=(1., 1.02),
+        #                             bbox_transform=self.ax.transAxes,
+        #                             borderpad=0.,)
+        #     self.ax.add_artist(self.anchored_box) 
             
+        # df = pd.DataFrame(data)
+        # print(df)
+        # df_melt = pd.melt(df, id_vars=["time", "event_index", "name"], var_name="variable", value_name="value")
+        # print(df_melt)
+        # input()
+        # df_melt = df_melt.drop_duplicates(subset=["variable", "value"])
+        # sns.set_theme()
         df = pd.DataFrame(data)
-        df_melt = pd.melt(df, id_vars=["time", "event_index", "name"], var_name="variable", value_name="value")
-        df_melt = df_melt.drop_duplicates(subset=["variable", "value"])
+        df['overguard_diff'] = df['overguard'].diff()
+        df['health_diff'] = df['health'].diff()
+        df['shield_diff'] = df['shield'].diff()
+        df['armor_diff'] = df['armor'].diff()
+
+        df.loc[df['overguard_diff']==0, 'overguard'] = np.nan
+        df.loc[df['health_diff']==0, 'health'] = np.nan
+        df.loc[df['shield_diff']==0, 'shield'] = np.nan
+        df.loc[df['armor_diff']==0, 'armor'] = np.nan
+        # print(df)
+        # sns.lineplot(data=df, x="time", y=['overguard', 'health', 'shield', 'armor'], alpha=0.5, estimator=None, errorbar=None, marker='.', markeredgecolor='black', drawstyle='steps-post', ax=self.ax, legend=False)
+        # df.plot.line(x="time", y=['overguard', 'health', 'shield', 'armor'], color={"overguard": "darkgray", "health": "red", "shield": "royalblue", "armor": "gold"}, alpha=0.5, marker='.', markeredgecolor='black', drawstyle='steps-post', ax=self.ax, legend=False)
+        # if self.legend:
+        #     self.ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        
+        df_melt = pd.melt(df, id_vars=["time", "event_index", "name", "info", "sim_index"], var_name="variable", value_name="value").dropna()
+        # df_melt = df_melt.drop_duplicates(subset=["variable", "value"])
 
         stats = enemy.get_stats()
         names = [key for key,value in stats.items() if value > 0 ]
@@ -162,13 +307,13 @@ class Simulacrum:
         self.df = pd.concat([self.df, df.copy()])
 
         # plot the data using seaborn
-        # sns.scatterplot(data=self.df, x="time", y="value", hue="variable", alpha=0.5, ax=self.ax)
-        sns.lineplot(data=df, x="time", y="value", hue="variable", alpha=0.5, estimator=None, errorbar=None, drawstyle='steps-post', ax=self.ax, legend=False)
-
-        self.ax.set_ylim(bottom=0)
+        palette ={"overguard": "dimgray", "health": "red", "shield": "royalblue", "armor": "gold"}
+        sns.lineplot(data=df, x="time", y="value", hue="variable", alpha=0.5, estimator=None, errorbar=None, marker='.', markeredgecolor='black', drawstyle='steps-post', ax=self.ax, legend=False, palette=palette)
+        self.ax2.cla()
+        sns.histplot(data=dict(kill_times=self.kill_times), x='kill_times', ax=self.ax2)
 
         self.fig.tight_layout()
-
+        
         
     def onclick(self, event, df:pd.DataFrame):
         # display_str = ''
@@ -213,8 +358,10 @@ class Simulacrum:
         v = df1['value'].iloc[0]
         ci = df1['event_index'].iloc[0]
         name = df1['name'].iloc[0]
+        info = df1['info'].iloc[0]
+        sim_index = df1['sim_index'].iloc[0]
         
-        df2 = df[(df["time"] <= t) & (df["variable"] == vb) & (df["event_index"] < ci)]
+        df2 = df[(df["time"] <= t) & (df["variable"] == vb) & (df["event_index"] < ci) & (df["sim_index"] == sim_index)]
         
         if len(df2.index) == 0 :
             delta = 0
@@ -252,7 +399,7 @@ class Simulacrum:
                             arrowprops=dict(arrowstyle="simple", connectionstyle="arc3,rad=-0.2"),
                             ha=ha, va=va)
         
-        bbox_text = f"Time: {t:.1f}s, {vb.capitalize()}: {v:.1f}\nDamage: {(delta):.2f}\nInfo: {name}"
+        bbox_text = f"Time: {t:.1f}s, {vb.capitalize()}: {v:.1f}\nDamage: {(delta):.2f}\nInfo: {name} {info}"
         box1 = TextArea(bbox_text, textprops=dict(color="k"))
         self.anchored_box = AnchoredOffsetbox(loc='lower left',
                                  child=box1, pad=0.4,
@@ -267,31 +414,53 @@ class Simulacrum:
     def offclick(self, event):
         self.fig.canvas.draw()
 
-    def fast_run(self, enemies:List[Unit], fire_mode:FireMode):
+    def fast_run(self, enemies:List[Unit], fire_mode:FireMode, primer:FireMode):
+        self.reset()
+        fire_mode.reset()
+        for enemy in enemies:
+            enemy.reset()
+        
+
         event_time = fire_mode.chargeTime.modded + fire_mode.embedDelay.modded
-        heapq.heappush(self.event_queue, (event_time, self.get_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
+        heapq.heappush(self.event_queue, (event_time, self.consume_call_index(), EventTrigger(fire_mode.pull_trigger, event_time, enemy=enemies[0])))
 
         for enemy in enemies:
+            if primer and len(primer.forcedProc)>0:
+                enemy.pellet_hit(primer, fire_mode.target_bodypart)
+
             while enemy.overguard.current_value > 0 or enemy.health.current_value > 0:
                 self.time, _, event = heapq.heappop(self.event_queue)
-                event.func(event.fire_mode, enemy)
+                event.func(**event.kwargs)
                 
                 if self.time > 20 :
                     break
+        if self.time < 20:
+            self.kill_times.append(self.time)
+    
+    def run_reapeated(self, enemy:Unit, fire_mode:FireMode, primer:FireMode, count=20):
+        self.kill_times = []
+        for _ in range(count):
+            self.reset()
+            enemy.reset()
+            fire_mode.reset()
+
+            self.fast_run([enemy], fire_mode, primer)
+    
+    def plot_hist(self):
+        self.ax2.cla()
+        sns.histplot(data=dict(kill_times=self.kill_times), x='kill_times', ax=self.ax2)
+        self.fig.tight_layout()
+
 
 def stats_changed(prev_data:dict, enemy:Unit):
-    if prev_data["overguard"] == enemy.overguard.current_value and prev_data["shield"] == enemy.shield.current_value\
-                        and prev_data["health"] == enemy.health.current_value and prev_data["armor"] == enemy.armor.current_value:
-        return False
-    return True
+    if prev_data["overguard"] != enemy.overguard.current_value or \
+        prev_data["shield"] != enemy.shield.current_value or \
+            prev_data["health"] != enemy.health.current_value or \
+                prev_data["armor"] != enemy.armor.current_value:
+        return True
+    return False
 
-def run_reapeated(simulation:Simulacrum, enemy:Unit, fire_mode:FireMode, count=20):
-    for _ in range(count):
-        simulation.reset()
-        enemy.reset()
-        fire_mode.reset()
 
-        simulation.fast_run([enemy], fire_mode)
 
 def run_once(simulation:Simulacrum, enemy:Unit, fire_mode:FireMode):
     simulation.run_simulation([enemy], fire_mode)

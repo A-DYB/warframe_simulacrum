@@ -24,14 +24,6 @@ class Weapon():
         self.ui = ui
         self.simulation = simulation
         self.data = self.get_weapon_data()
-        # default_data = copy.deepcopy(const.DEFAULT_WEAPON_CONFIG)
-        # self.data = update(default_data, data)
-
-        # default_fm = copy.deepcopy(const.DEFAULT_FIRE_MODE)
-        # if len(self.data.get('fireModes', {})) == 0:
-        #     self.data['fireModes'] = {'default':copy.deepcopy(const.DEFAULT_FIRE_MODE)}
-        # for k, fm in self.data.get('fireModes', {}).items():
-        #     self.data['fireModes'][k] = update(copy.deepcopy(const.DEFAULT_FIRE_MODE), fm)
 
         self.riven_type = self.data.get("rivenType", "")
         self.fire_modes:dict = {f'{name}':FireMode(self, name) for name in self.data.get("fireModes", {})}
@@ -69,7 +61,7 @@ class Weapon():
         self.factionDamage_m = {"base":0}
         self.ammoCost_m = {"base":0, "energized_munitions":0}
 
-        self.special_m = {"encumber":0, "devouring_attrition":0}
+        self.special_m = {"encumber_chance":0, "attrition_chance":0}
 
         self.last_encumber_time = 0
 
@@ -237,7 +229,7 @@ class FireMode():
 
 
         ## Multishot
-        self.multishot.modded = <float>self.multishot.base * (<float>1 + <float>self.weapon.multishot_m["base"])
+        self.multishot.modded = <float>self.multishot.base * (<float>1 + <float>self.weapon.multishot_m["base"]) if self.primary_effect else <float>self.multishot.base
         if self.trigger == "HELD":
             self.multishot.modded = min(1, self.multishot.modded) + max(0, self.multishot.modded-1) * <float>self.weapon.damagePerShot_m["multishot_damage"]
 
@@ -318,8 +310,11 @@ class FireMode():
         self.totalDamage.base_modified = self.damagePerShot.base_total
 
         cdef float direct_damage = <float>0 if self.radial else <float>self.unique_proc_count * (<float>self.weapon.damagePerShot_m["condition_overload_base"] + <float>self.weapon.damagePerShot_m["direct"])
+        # multiplicative_condition_overload
+        cdef float direct_damage_multiplier = <float>0 if self.radial else <float>self.unique_proc_count * (<float>self.weapon.damagePerShot_m["multiplicative_condition_overload"])
+
         cdef float damage_multiplier = (<float>1 + <float>self.weapon.damagePerShot_m["base"] + direct_damage) * \
-                                    <float>self.weapon.damagePerShot_m["final_multiplier"]
+                                    <float>self.weapon.damagePerShot_m["final_multiplier"] * (1 + direct_damage_multiplier)
 
         self.damagePerShot.modded = ((self.damagePerShot.quantized * self.damagePerShot.base_total) * damage_multiplier).astype(np.single)
         self.totalDamage.modded = self.totalDamage.base_modified * damage_multiplier
@@ -344,11 +339,12 @@ class FireMode():
                 self.multishot_damage = <float>0 if i == 0 else <float>self.weapon.damagePerShot_m["multishot_damage"]
 
             fm_time = self.simulation.time + self.embedDelay.modded
-            heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=self, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
+            heapq.heappush(self.simulation.event_queue, (fm_time, self.simulation.consume_call_index(), EventTrigger(enemy.pellet_hit, name="Pellet hit", fire_mode=self, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
 
             for fme in self.fire_mode_effects.values():
                 fme_time = fme.embedDelay.modded + fm_time + 1e-4
-                heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.get_call_index(), EventTrigger(enemy.pellet_hit, name=f"{fme.name} hit", fire_mode=fme, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
+                for _ in range(get_tier(fme.multishot.modded)):
+                    heapq.heappush(self.simulation.event_queue, (fme_time, self.simulation.consume_call_index(), EventTrigger(enemy.pellet_hit, name=f"{fme.name} hit", fire_mode=fme, info_callback=enemy.get_last_crit_info, bodypart=self.target_bodypart)))
 
 
         if self.magazineSize.current > 0:
@@ -357,7 +353,7 @@ class FireMode():
             self.magazineSize.current = self.magazineSize.modded
             next_event = self.simulation.time + max(self.reloadTime.modded, self.fireTime.modded) + self.chargeTime.modded
 
-        heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.get_call_index(), EventTrigger(self.pull_trigger, enemy=enemy)))
+        heapq.heappush(self.simulation.event_queue, (next_event, self.simulation.consume_call_index(), EventTrigger(self.pull_trigger, enemy=enemy)))
 
     def get_info(self):
         return dict(weapon=self.weapon.name, fire_mode=self.name)

@@ -50,7 +50,7 @@ class DefaultProcManager():
 
         if self.count == 0:
             self.next_event = new_proc.expiry
-            heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.get_call_index(), EventTrigger(self.remove_expired_proc)))
+            heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.consume_call_index(), EventTrigger(self.remove_expired_proc)))
             self.enemy.unique_proc_count += 1
         elif self.count == self.max_stacks:
             delta = False
@@ -81,7 +81,7 @@ class DefaultProcManager():
             
             if self.count > 0:
                 self.next_event = self.proc_dq[0].expiry
-                heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.get_call_index(), EventTrigger(self.remove_expired_proc)))
+                heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.consume_call_index(), EventTrigger(self.remove_expired_proc)))
 
             if self.count_change_callback is not None:
                 self.count_change_callback(self)
@@ -102,8 +102,8 @@ class ProcContainer:
         if self.count == 0:
             # self.total_damage[const.PROCID_DAMAGETYPE[self.manager.proc_id]] = 1
             self.next_event = proc.next_event
-            heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{const.PROC_INFO[const.INDEX_PT[self.manager.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=proc.fire_mode)))
-            heapq.heappush(self.simulation.event_queue, (proc.expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event)))
+            heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{const.PROC_INFO[const.INDEX_PT[self.manager.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=proc.fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (proc.expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event)))
             if self.manager.count == 0:
                 self.enemy.unique_proc_count += 1
 
@@ -120,7 +120,7 @@ class ProcContainer:
         self.manager.total_applied_damage += app_dmg
 
         self.next_event += 1
-        heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{const.PROC_INFO[const.INDEX_PT[self.manager.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
+        heapq.heappush(self.simulation.event_queue, (self.next_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{const.PROC_INFO[const.INDEX_PT[self.manager.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
 
     def expiry_event(self):
         if self.count>0 and self.simulation.time >= self.proc_dq[0].expiry:
@@ -133,7 +133,7 @@ class ProcContainer:
 
             if self.count == 0:
                 return
-            heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event)))
+            heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event)))
 
     def remove_oldest(self):
         self.total_damage[const.PROCID_DAMAGETYPE[self.manager.proc_id]] -= self.proc_dq[0].damage
@@ -145,7 +145,7 @@ class ProcContainer:
 
         if self.count == 0:
             return
-        heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event)))
+        heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event)))
 
     def get_damage_info(self):
         return f"Count in bin = {self.count}"
@@ -241,10 +241,10 @@ class AOEProcManager:
             min_dmg = 0
             self.init_time = self.simulation.time
             self.next_tick_event = self.init_time
-            heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
 
             expiry = self.simulation.time + duration
-            heapq.heappush(self.simulation.event_queue, (expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event)))
+            heapq.heappush(self.simulation.event_queue, (expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event)))
             self.enemy.unique_proc_count += 1
         elif self.count >= self.max_stacks:
             # remove oldest proc
@@ -274,7 +274,7 @@ class AOEProcManager:
         self.total_applied_damage += applied_dmg
         self.next_tick_event += 1
         # always put on event queue because even if expiry is imminent, another refresher proc can happen before then
-        heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
+        heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
 
     def expiry_event(self):
         if self.count == 0:
@@ -289,7 +289,7 @@ class AOEProcManager:
                 self.enemy.unique_proc_count -= 1
 
             if self.count > 0:
-                heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event)))
+                heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event)))
     
     def get_damage_info(self):
         return f"Count={self.count}"
@@ -353,9 +353,9 @@ class HeatProcManager:
 
             armor_strip_delay = self.base_armor_strip_delay * (1 + fire_mode.weapon.statusDuration_m["base"])
             # schedule heat strip
-            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.get_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode)))
-            heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
-            heapq.heappush(self.simulation.event_queue, (expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.consume_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode, info_callback=lambda: "Heat proc armor strip")))
+            heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
             self.enemy.unique_proc_count += 1
         elif self.count >= self.max_stacks:
             damage = self.damage_scaling * damage * (1 + self.proc_dq[0].fire_mode.weapon.heat_m["base"])
@@ -385,7 +385,7 @@ class HeatProcManager:
         self.total_applied_damage += applied_dmg
         self.next_tick_event += 1
         # always put on event queue because even if expiry is imminent, another refresher proc can happen before then
-        heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.get_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
+        heapq.heappush(self.simulation.event_queue, (self.next_tick_event, self.simulation.consume_call_index(), EventTrigger(self.damage_event, name=f"{self.enemy.proc_info[const.INDEX_PT[self.proc_id]]['name']} proc", info_callback=self.get_damage_info, fire_mode=fire_mode)))
 
     def expiry_event(self, fire_mode):
         if self.count == 0:
@@ -394,12 +394,12 @@ class HeatProcManager:
             if self.expiry <= self.simulation.time:
                 armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.weapon.statusDuration_m["base"])
                 # before reset, pass the fire_mode from the original proc so the status duration is preserved
-                heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
+                heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.consume_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode, info_callback=lambda: "Heat proc armor regen")))
                 self.count = 0
                 self.clear_proc()
                 self.enemy.unique_proc_count -= 1
             else:
-                heapq.heappush(self.simulation.event_queue, (self.expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))  
+                heapq.heappush(self.simulation.event_queue, (self.expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))  
         else:
             if self.proc_dq[0].expiry <= self.simulation.time:
                 old_proc = self.proc_dq.popleft()
@@ -407,11 +407,11 @@ class HeatProcManager:
                 self.count -= 1
                 if len(self.proc_dq) > 0:
                     # schedule next expiry
-                    heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.get_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
+                    heapq.heappush(self.simulation.event_queue, (self.proc_dq[0].expiry, self.simulation.consume_call_index(), EventTrigger(self.expiry_event, fire_mode=fire_mode)))
                 else:
                     armor_regen_delay = self.base_armor_regen_delay * (1 + self.proc_dq[0].fire_mode.weapon.statusDuration_m["base"])
                     # before reset, pass the fire_mode from the original proc so the status duration is preserved
-                    heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
+                    heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.consume_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode, info_callback=lambda: "Heat proc armor regen")))
                     self.count = 0
                     self.clear_proc()
                     self.enemy.unique_proc_count -= 1
@@ -428,7 +428,7 @@ class HeatProcManager:
 
         if self.strip_index < 4:
             armor_strip_delay = self.base_armor_strip_delay * (1 + self.proc_dq[0].fire_mode.weapon.statusDuration_m["base"])
-            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.get_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_strip_delay, self.simulation.consume_call_index(), EventTrigger(self.armor_strip_event, fire_mode=fire_mode, info_callback=lambda: "Heat proc armor strip")))
 
     def armor_regen_event(self, fire_mode: FireMode):
         if self.count > 0:
@@ -443,7 +443,7 @@ class HeatProcManager:
         self.enemy.armor.set_value_multiplier("Heat armor strip", strip_value)
         if self.strip_index > 0:
             armor_regen_delay = self.base_armor_regen_delay * (1 + fire_mode.weapon.statusDuration_m["base"])
-            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.get_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode)))
+            heapq.heappush(self.simulation.event_queue, (self.simulation.time + armor_regen_delay, self.simulation.consume_call_index(), EventTrigger(self.armor_regen_event, fire_mode=fire_mode, info_callback=lambda: "Heat proc armor regen")))
 
     def get_damage_info(self):
         return f"Count={self.count}"

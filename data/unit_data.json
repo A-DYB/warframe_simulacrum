@@ -7,7 +7,7 @@
         "armor_type": "None",
         "base_shield": 0,
         "base_health": 50000,
-        "damage_controller_type": "DC_DYNAMIC_DPS_2",
+        "damage_controller_type": "DC_DYNAMIC_DPS_FRAGMENTED",
         "faction": "The Murmur",
         "base_overguard": 0,
         "is_eximus": false,
@@ -68,7 +68,7 @@
         "faction": "Infested",
         "base_overguard": 0,
         "is_eximus": false,
-        "damage_controller_type": "DC_DYNAMIC_DPS_1",
+        "damage_controller_type": "DC_DYNAMIC_DPS_ARCHON",
         "proc_info": {
             "PT_IMPACT": {
                 "name": "Impact",
@@ -143,7 +143,7 @@
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
-        "damage_controller_type": "DC_STATIC_DPS_1",
+        "damage_controller_type": "DC_STATIC_DPS_DEMOLISHER",
         "faction": "Grineer",
         "base_overguard": 0,
         "is_eximus": false,
@@ -381,14 +381,120 @@
         "base_shield": 0,
         "base_level": 8,
         "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
         "faction": "Grineer",
         "base_overguard": 0,
         "is_eximus": false,
-        "health_vulnerability": 1.0,
-        "shield_vulnerability": 1.0
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
     },
     "Demolisher Expired": {
         "base_health": 1500,
@@ -431,8 +537,8 @@
         "health_type": "Flesh",
         "armor_type": "Ferrite",
         "shield_type": "Shield",
-        "damage_controller_type": "DC_STATIC_DPS_2",
-        "critical_controller_type": "CC_1",
+        "damage_controller_type": "DC_STATIC_DPS_ACOLYTE",
+        "critical_controller_type": "CC_ACOLYTE",
         "faction": "Stalker",
         "base_overguard": 0,
         "is_eximus": false,
@@ -582,14 +688,120 @@
         "base_shield": 0,
         "base_level": 1,
         "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
         "health_type": "Infested",
         "armor_type": "None",
         "shield_type": "None",
+        "damage_controller_type": "DC_STATIC_DPS_DEMOLISHER",
+        "critical_controller_type": "CC_NONE",
         "faction": "Infested",
         "base_overguard": 0,
         "is_eximus": false,
-        "health_vulnerability": 1.0,
-        "shield_vulnerability": 1.0
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
     },
     "Infested Demolisher Juggernaut": {
         "base_health": 3000,
@@ -700,16 +912,122 @@
         "base_health": 150,
         "base_armor": 200,
         "base_shield": 0,
-        "base_level": 15,
+        "base_level": 1,
         "base_dr": 1.0,
-        "base_overguard": 0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Alloy",
         "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
         "faction": "Grineer",
+        "base_overguard": 0,
         "is_eximus": false,
-        "health_vulnerability": 1.0,
-        "shield_vulnerability": 1.0
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
     },
     "Butcher Eximus1": {
         "base_health": 237,
@@ -743,18 +1061,124 @@
     },
     "Butcher": {
         "base_health": 50,
-        "base_armor": 0,
+        "base_armor": 5,
         "base_shield": 0,
         "base_level": 1,
         "base_dr": 1.0,
-        "base_overguard": 0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
         "health_type": "Cloned Flesh",
         "armor_type": "Ferrite",
         "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
         "faction": "Grineer",
+        "base_overguard": 0,
         "is_eximus": false,
-        "health_vulnerability": 1.0,
-        "shield_vulnerability": 1.0
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
     },
     "Narmer Powerfist": {
         "base_health": 100,
@@ -782,9 +1206,738 @@
         "health_type": "Flesh",
         "armor_type": "Ferrite",
         "shield_type": "Shield",
-        "damage_controller_type": "DC_NORMAL",
-        "critical_controller_type": "CC_1",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_ACOLYTE",
         "faction": "Stalker",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
+    },
+    "Virtiol Necramite": {
+        "base_health": 1000,
+        "base_armor": 50,
+        "base_shield": 0,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Machinery",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "damage_controller_type": "DC_DYNAMIC_DPS_NECRAMITE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Murmur",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 2.0,
+                "critical_damage_multiplier": 2.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling": 0.175
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        },
+        "controller_value": 350.0
+    },
+    "Roller": {
+        "base_health": 40,
+        "base_armor": 100,
+        "base_shield": 0,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Machinery",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Grineer",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling": 0.175
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
+    },
+    "Demolisher Voidrig": {
+        "base_health": 3000,
+        "base_armor": 100,
+        "base_shield": 0,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Machinery",
+        "armor_type": "Alloy",
+        "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Murmur",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling": 0.175
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        },
+        "controller_value": 175000.0
+    },
+    "Demolisher Bonewidow": {
+        "base_health": 1880,
+        "base_armor": 100,
+        "base_shield": 1000,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Machinery",
+        "armor_type": "Alloy",
+        "shield_type": "Proto Shield",
+        "damage_controller_type": "DC_DYNAMIC_DPS_NECRAMITE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Murmur",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6,
+                "max_stacks": 3
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6,
+                "max_stacks": 4,
+                "damage_scaling": 0.175
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        },
+        "controller_value": 175000.0
+    },
+    "Demolisher Charger": {
+        "base_health": 2500,
+        "base_armor": 0,
+        "base_shield": 0,
+        "base_level": 1,
+        "base_dr": 0.8,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Infested Flesh",
+        "armor_type": "None",
+        "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Grineer",
+        "base_overguard": 0,
+        "is_eximus": false,
+        "bodypart_multipliers": {
+            "body": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            },
+            "head": {
+                "multiplier": 3.0,
+                "critical_damage_multiplier": 2.0
+            }
+        },
+        "animation_multipliers": {
+            "normal": {
+                "multiplier": 1.0,
+                "critical_damage_multiplier": 1.0
+            }
+        },
+        "proc_info": {
+            "PT_IMPACT": {
+                "name": "Impact",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_PUNCTURE": {
+                "name": "Puncture",
+                "duration": 6.0,
+                "max_stacks": 5
+            },
+            "PT_SLASH": {
+                "name": "Slash",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.35
+            },
+            "PT_HEAT": {
+                "name": "Heat",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "refresh": true,
+                "damage_scaling": 0.5
+            },
+            "PT_COLD": {
+                "name": "Cold",
+                "duration": 6.0,
+                "max_stacks": 9
+            },
+            "PT_ELECTRIC": {
+                "name": "Electric",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_TOXIN": {
+                "name": "Toxin",
+                "duration": 6.0,
+                "max_stacks": 50000,
+                "damage_scaling": 0.5
+            },
+            "PT_BLAST": {
+                "name": "Blast",
+                "duration": 6.0,
+                "max_stacks": 4
+            },
+            "PT_RADIATION": {
+                "name": "Radiation",
+                "duration": 12.0,
+                "max_stacks": 10
+            },
+            "PT_GAS": {
+                "name": "Gas",
+                "duration": 6.0,
+                "max_stacks": 10,
+                "damage_scaling": 0.5
+            },
+            "PT_MAGNETIC": {
+                "name": "Magnetic",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_VIRAL": {
+                "name": "Viral",
+                "duration": 6.0,
+                "max_stacks": 10
+            },
+            "PT_CORROSIVE": {
+                "name": "Corrosive",
+                "duration": 8.0,
+                "max_stacks": 10
+            },
+            "PT_RADIANT": {
+                "name": "Void",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_KNOCKDOWN": {
+                "name": "Knockdown",
+                "duration": 3.0,
+                "max_stacks": 1
+            },
+            "PT_MICROWAVE": {
+                "name": "Microwave",
+                "duration": 9999.0,
+                "max_stacks": 1
+            }
+        }
+    },
+    "Elite Lancers": {
+        "base_health": 100,
+        "base_armor": 200,
+        "base_shield": 0,
+        "base_level": 1,
+        "base_dr": 1.0,
+        "health_vulnerability": 1.0,
+        "shield_vulnerability": 1.0,
+        "health_type": "Cloned Flesh",
+        "armor_type": "Ferrite",
+        "shield_type": "None",
+        "damage_controller_type": "DC_NONE",
+        "critical_controller_type": "CC_NONE",
+        "faction": "Grineer",
         "base_overguard": 0,
         "is_eximus": false,
         "bodypart_multipliers": {
